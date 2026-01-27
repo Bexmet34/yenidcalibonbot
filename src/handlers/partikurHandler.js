@@ -1,0 +1,50 @@
+const { MessageFlags, ActionRowBuilder, TextInputBuilder, TextInputStyle, ModalBuilder } = require('discord.js');
+const { hasActiveParty } = require('../services/partyManager');
+
+/**
+ * Handles /partikur command
+ * Shows modal directly without duration selection
+ */
+async function handlePartikurCommand(interaction) {
+    if (hasActiveParty(interaction.user.id)) {
+        return await interaction.reply({
+            content: '❌ **Zaten aktif bir partiniz var!**\n\nYeni bir parti açmadan önce mevcut partinizi kapatmalısınız. Kapatmak için:\n1️⃣ Mevcut partideki **"Partiyi Kapat"** butonuna basabilir,\n2️⃣ Veya `/partikapat` komutunu kullanabilirsiniz.',
+            flags: [MessageFlags.Ephemeral]
+        });
+    }
+
+    const modal = new ModalBuilder()
+        .setCustomId('parti_modal')
+        .setTitle('Parti Oluştur');
+
+    const headerInput = new TextInputBuilder()
+        .setCustomId('party_header')
+        .setLabel('Parti Başlığı')
+        .setPlaceholder('Başlığı giriniz')
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true);
+
+    const rolesInput = new TextInputBuilder()
+        .setCustomId('party_roles')
+        .setLabel('Roller')
+        .setPlaceholder('Tank\nHeal\nDPS\n(Her satıra bir rol)')
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(true);
+
+    modal.addComponents(
+        new ActionRowBuilder().addComponents(headerInput),
+        new ActionRowBuilder().addComponents(rolesInput)
+    );
+
+    await interaction.showModal(modal);
+}
+
+// Deprecated func kept for safety, but unused
+async function handleDurationButton(interaction) {
+    return false;
+}
+
+module.exports = {
+    handleDurationButton,
+    handlePartikurCommand
+};
