@@ -23,4 +23,10 @@ module.exports = {
 
     // Security
     WHITELIST_USERS: ['407234961582587916'], // Kendi ID'nizi buraya ekleyin
+
+    // Log Kanalları (Birden fazla eklenebilir)
+    LOG_CHANNELS: [
+        '1464080234335703253',
+        '1464080234335703253'
+    ],
 };

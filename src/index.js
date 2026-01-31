@@ -56,14 +56,17 @@ client.once('clientReady', async () => {
 
     // GÜNCELLEME BİLDİRİMİ
     try {
-        const guild = client.guilds.cache.get(config.GUILD_ID);
-        if (guild) {
-            const notifyChannel = guild.channels.cache.find(c =>
-                (c.type === 0 || c.type === 5) && // Text or Announcement channel
-                c.permissionsFor(guild.members.me).has('SendMessages')
-            );
-            if (notifyChannel) {
-                await notifyChannel.send('🚀 **Bot başarıyla yeniden başlatıldı ve güncellemeler uygulandı!**');
+        if (config.LOG_CHANNELS && config.LOG_CHANNELS.length > 0) {
+            for (const channelId of config.LOG_CHANNELS) {
+                try {
+                    const notifyChannel = await client.channels.fetch(channelId);
+                    if (notifyChannel) {
+                        await notifyChannel.send('🚀 **Bot başarıyla yeniden başlatıldı ve güncellemeler uygulandı!**');
+                        console.log(`[Sistem] Güncelleme bildirimi gönderildi: ${channelId}`);
+                    }
+                } catch (err) {
+                    console.error(`[Sistem] Kanal ${channelId} bulunamadı veya mesaj gönderilemedi:`, err.message);
+                }
             }
         }
     } catch (err) {
