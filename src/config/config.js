@@ -26,7 +26,7 @@ module.exports = {
 
     // Log Kanalları (Birden fazla eklenebilir)
     LOG_CHANNELS: [
-        '1464080234335703253',
+        '1467277133914308853',
         ''
     ],
 };
