@@ -7,7 +7,7 @@ async function getEuropeGuildMembers(guildId) {
     return new Promise((resolve, reject) => {
         const url = `https://gameinfo-ams.albiononline.com/api/gameinfo/guilds/${guildId}/members`;
 
-        https.get(url, (res) => {
+        https.get(url, { family: 4 }, (res) => {
             let data = '';
             res.on('data', (chunk) => data += chunk);
             res.on('end', () => {
