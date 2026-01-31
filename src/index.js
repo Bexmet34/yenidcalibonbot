@@ -1,4 +1,6 @@
 require('dotenv').config({ quiet: true });
+const dns = require('node:dns');
+dns.setDefaultResultOrder('ipv4first'); // Force IPv4 to prevent ENETUNREACH errors on VPS
 const { Client, GatewayIntentBits, ActivityType } = require('discord.js');
 const config = require('./config/config');
 const { registerCommands } = require('./services/commandRegistration');
@@ -58,6 +60,7 @@ client.once('clientReady', async () => {
     try {
         if (config.LOG_CHANNELS && config.LOG_CHANNELS.length > 0) {
             for (const channelId of config.LOG_CHANNELS) {
+                if (!channelId || channelId.trim() === '') continue; // Skip empty strings
                 try {
                     const notifyChannel = await client.channels.fetch(channelId);
                     if (notifyChannel) {
