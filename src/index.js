@@ -53,6 +53,22 @@ async function startBot() {
 client.once('ready', async () => {
     console.log(`[Bot] ${client.user.tag} aktif!`);
 
+    // GÜNCELLEME BİLDİRİMİ
+    try {
+        const guild = client.guilds.cache.get(config.GUILD_ID);
+        if (guild) {
+            const notifyChannel = guild.channels.cache.find(c =>
+                (c.type === 0 || c.type === 5) && // Text or Announcement channel
+                c.permissionsFor(guild.members.me).has('SendMessages')
+            );
+            if (notifyChannel) {
+                await notifyChannel.send('🚀 **Bot başarıyla yeniden başlatıldı ve güncellemeler uygulandı!**');
+            }
+        }
+    } catch (err) {
+        console.error('[Bot] Başlatma mesajı gönderilemedi:', err);
+    }
+
     // Set activity safely with a small delay and error handling
     setTimeout(() => {
         try {
@@ -63,7 +79,6 @@ client.once('ready', async () => {
         }
     }, 2000);
 
-    // No party manager initialization needed (parties are unlimited and permanent)
     registerCommands(client);
 });
 
