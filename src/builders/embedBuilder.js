@@ -24,27 +24,20 @@ function createEmbed(title, details, content, roles, isClosed = false) {
             {
                 name: `${ROLE_ICONS.TANK} Tank`,
                 value: roles.tank === '****' ? '`Boş Slot`' : roles.tank,
-                inline: true
+                inline: false
             },
             {
                 name: `${ROLE_ICONS.HEAL} Heal`,
                 value: roles.heal === '****' ? '`Boş Slot`' : roles.heal,
-                inline: true
+                inline: false
             },
-            { name: '\u200b', value: '\u200b', inline: true }, // Spacer for alignment
             ...roles.dps.map((d, index) => ({
                 name: `${ROLE_ICONS.DPS} DPS ${index + 1}`,
                 value: d === '****' ? '`Boş Slot`' : d,
-                inline: true
+                inline: false
             })),
-            { name: '\u200b', value: '\u200b', inline: false }, // Spacer
-            { name: '📌 **KURALLAR VE NOTLAR**', value: NOTLAR_METNI, inline: false }
-        )
-        .setFooter({
-            text: isClosed ? '⛔ Başvuru Kapandı' : '💎 Başvurmak için yukarıdaki butonları kullanın',
-            iconURL: 'https://cdn.discordapp.com/emojis/1234567890.png' // Optional: Add guild icon
-        })
-        .setTimestamp();
+            { name: '\u200b', value: '\u200b', inline: false }
+        );
 
     return embed;
 }
@@ -58,9 +51,7 @@ function createPartikurEmbed(header, rolesList) {
     const embed = new EmbedBuilder()
         .setTitle(`🛡️ Turquoise | ${header}`)
         .setDescription(desc)
-        .setColor('#F1C40F')
-        .setFooter({ text: '💎 Başvurmak için aşağıdaki butonları kullanın' })
-        .setTimestamp();
+        .setColor('#F1C40F');
 
     return embed;
 }
@@ -78,9 +69,7 @@ function createHelpEmbed() {
             { name: '🏗️ /partikur', value: 'Tamamen özel roller belirleyebileceğiniz bir parti formu açar.', inline: false },
             { name: 'ℹ️ /yardim', value: 'Bu menüyü görüntüler.', inline: false },
             { name: '💎 Geliştirici', value: '```ansi\n\u001b[31mHakkı\u001b[0m\n```', inline: false }
-        )
-        .setFooter({ text: 'Turquoise Guild Yönetimi 💎' })
-        .setTimestamp();
+        );
 }
 
 module.exports = {

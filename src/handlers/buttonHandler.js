@@ -23,10 +23,13 @@ async function handlePartyButtons(interaction) {
         }
 
         const oldEmbed = message.embeds[0];
+        const newFields = oldEmbed.fields.filter(f => !f.name.includes('📌') && !f.name.includes('KURALLAR'));
         const closedEmbed = EmbedBuilder.from(oldEmbed)
             .setTitle(`${oldEmbed.title} [KAPALI]`)
             .setColor('#808080')
-            .setFooter({ text: '⛔ Bu başvuru parti sahibi tarafından kapatıldı.' });
+            .setFields(newFields)
+            .setFooter(null)
+            .setTimestamp(null);
 
         const closedRow = createClosedButton();
 

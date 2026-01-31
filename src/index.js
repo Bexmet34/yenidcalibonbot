@@ -44,12 +44,13 @@ async function startBot() {
     try {
         await client.login(config.DISCORD_TOKEN);
     } catch (error) {
+        console.error('Bot login error:', error);
         setTimeout(startBot, 5000);
     }
 }
 
 // Client ready event
-client.once('clientReady', async () => {
+client.once('ready', async () => {
     console.log(`[Bot] ${client.user.tag} aktif!`);
 
     // Set activity safely with a small delay and error handling

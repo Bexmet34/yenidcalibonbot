@@ -39,15 +39,9 @@ function buildPartikurPayload(header, rolesList, ownerId) {
         embed.addFields({
             name: `${icon} ${role}`,
             value: '`Boş Slot`',
-            inline: true
+            inline: false
         });
     });
-
-    // Add spacer and notes
-    embed.addFields(
-        { name: '\u200b', value: '\u200b', inline: false },
-        { name: '📌 **KURALLAR VE NOTLAR**', value: require('../constants/constants').NOTLAR_METNI, inline: false }
-    );
 
     const rows = createCustomPartyComponents(rolesList, ownerId);
     return { embeds: [embed], components: rows };

@@ -118,11 +118,10 @@ function updateButtonStates(oldComponents, newFields) {
             }
 
             if (isFull) {
-                btn.setLabel('✅ DOLU');
                 btn.setDisabled(true);
                 btn.setStyle(ButtonStyle.Secondary);
             } else {
-                if (btn.data.label === '✅ DOLU' || btn.data.label === 'DOLU') {
+                if (btn.data.disabled && btn.data.style === ButtonStyle.Secondary) {
                     if (btn.data.custom_id === 'join_tank') {
                         btn.setLabel('Tank').setStyle(ButtonStyle.Primary).setDisabled(false);
                     } else if (btn.data.custom_id === 'join_heal') {
@@ -131,7 +130,6 @@ function updateButtonStates(oldComponents, newFields) {
                         btn.setLabel('DPS').setStyle(ButtonStyle.Danger).setDisabled(false);
                     } else if (btn.data.custom_id.startsWith('join_custom_')) {
                         const customIndex = parseInt(btn.data.custom_id.split('_')[2]);
-                        // Recover original label from field name
                         let roleCounter = 0;
                         for (let i = 0; i < newFields.length; i++) {
                             if (!newFields[i].name.includes('👥') &&
