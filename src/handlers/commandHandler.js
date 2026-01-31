@@ -1,10 +1,12 @@
-const { MessageFlags, EmbedBuilder } = require('discord.js');
+const { MessageFlags, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { DEFAULT_CONTENT } = require('../constants/constants');
+const config = require('../config/config');
 const { createHelpEmbed } = require('../builders/embedBuilder');
 const { buildPvePayload } = require('../builders/payloadBuilder');
 const { safeReply } = require('../utils/interactionUtils');
 const { hasActiveParty, setActiveParty, getActiveParty, removeActiveParty } = require('../services/partyManager');
 const { createClosedButton } = require('../builders/componentBuilder');
+const { getEuropeGuildMembers } = require('../services/albionApiService');
 
 /**
  * Handles /yardim command
@@ -113,8 +115,107 @@ async function handlePartikapatCommand(interaction) {
     }
 }
 
+/**
+ * Pagination helper for member list
+ */
+function createMemberPageEmbed(members, page = 0) {
+    const pageSize = 20;
+    const start = page * pageSize;
+    const end = start + pageSize;
+    const currentMembers = members.slice(start, end);
+    const totalPages = Math.ceil(members.length / pageSize);
+
+    const embed = new EmbedBuilder()
+        .setTitle('🛡️ Turquoise Lonca Üyeleri')
+        .setColor('#2ECC71')
+        .setDescription(`**Toplam Üye:** ${members.length}\n**Sayfa:** ${page + 1} / ${totalPages}\n\n${currentMembers.map(m => `• ${m.Name}`).join('\n')}`);
+
+    return embed;
+}
+
+/**
+ * Handles /uyeler command
+ */
+async function handleUyelerCommand(interaction) {
+    const guildId = 'qw4DHcDZSz-LOvHAQlsOGw';
+    await interaction.deferReply();
+
+    try {
+        const { getEuropeGuildMembers } = require('../services/albionApiService');
+        const members = await getEuropeGuildMembers(guildId);
+        // Sort alphabetically
+        members.sort((a, b) => a.Name.localeCompare(b.Name));
+
+        const embed = createMemberPageEmbed(members, 0);
+
+        const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+        const row = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+                .setCustomId('members_prev_0')
+                .setLabel('⬅️ Geri')
+                .setStyle(ButtonStyle.Secondary)
+                .setDisabled(true),
+            new ButtonBuilder()
+                .setCustomId(`members_next_0`)
+                .setLabel('İleri ➡️')
+                .setStyle(ButtonStyle.Secondary)
+                .setDisabled(members.length <= 20)
+        );
+
+        return await interaction.editReply({ embeds: [embed], components: [row] });
+    } catch (error) {
+        console.error('[Uyeler] Hata:', error);
+        return await interaction.editReply({ content: `❌ Üye listesi alınırken bir hata oluştu: ${error.message}` });
+    }
+}
+
+/**
+ * Handles /kayitsistemi command
+ */
+async function handleKayitSistemiCommand(interaction) {
+    // Whitelist check
+    if (!config.WHITELIST_USERS.includes(interaction.user.id)) {
+        return await interaction.reply({
+            content: '❌ **Bu komutu kullanmak için yetkiniz bulunmuyor!**',
+            flags: [MessageFlags.Ephemeral]
+        });
+    }
+
+    const role = interaction.options.getRole('rol');
+    const channel = interaction.options.getChannel('kanal');
+
+    await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+
+    try {
+        const embed = new EmbedBuilder()
+            .setTitle('🛡️ Turquoise Lonca Kayıt Sistemi')
+            .setDescription('Loncaya kayıt olmak ve yetkilerinizi almak için aşağıdaki butona tıklayın.\n\n**Not:** Kayıt sırasında Albion oyun içi adınızı tam olarak girmeniz gerekmektedir.')
+            .setColor('#3498DB');
+
+        const row = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+                .setCustomId(`setup_register_${role.id}`)
+                .setLabel('Kayıt Ol')
+                .setStyle(ButtonStyle.Primary)
+                .setEmoji('📝')
+        );
+
+        await channel.send({ embeds: [embed], components: [row] });
+
+        return await interaction.editReply({
+            content: `✅ Kayıt sistemi başarıyla kuruldu!\n📍 Kanal: ${channel}\n🛡️ Rol: ${role}`
+        });
+    } catch (error) {
+        console.error('[KayitSistemi] Hata:', error);
+        return await interaction.editReply({ content: '❌ Kayıt sistemi kurulurken bir hata oluştu.' });
+    }
+}
+
 module.exports = {
     handleYardimCommand,
     handlePveCommand,
-    handlePartikapatCommand
+    handlePartikapatCommand,
+    handleUyelerCommand,
+    handleKayitSistemiCommand,
+    createMemberPageEmbed
 };

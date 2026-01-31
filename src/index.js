@@ -2,7 +2,7 @@ require('dotenv').config({ quiet: true });
 const { Client, GatewayIntentBits, ActivityType } = require('discord.js');
 const config = require('./config/config');
 const { registerCommands } = require('./services/commandRegistration');
-const { handleYardimCommand, handlePveCommand, handlePartikapatCommand } = require('./handlers/commandHandler');
+const { handleYardimCommand, handlePveCommand, handlePartikapatCommand, handleUyelerCommand, handleKayitSistemiCommand } = require('./handlers/commandHandler');
 const { handlePartikurCommand } = require('./handlers/partikurHandler');
 const { handlePartyButtons } = require('./handlers/buttonHandler');
 const { handlePartiModal } = require('./handlers/modalHandler');
@@ -96,6 +96,10 @@ client.on('interactionCreate', async interaction => {
                 await handlePartikurCommand(interaction);
             } else if (interaction.commandName === 'partikapat') {
                 await handlePartikapatCommand(interaction);
+            } else if (interaction.commandName === 'uyeler') {
+                await handleUyelerCommand(interaction);
+            } else if (interaction.commandName === 'kayitsistemi') {
+                await handleKayitSistemiCommand(interaction);
             }
         }
         // Handle button interactions

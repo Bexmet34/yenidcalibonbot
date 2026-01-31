@@ -20,4 +20,7 @@ module.exports = {
 
     // Activity
     ACTIVITY_TEXT: '/pve & /partikur',
+
+    // Security
+    WHITELIST_USERS: ['407234961582587916'], // Kendi ID'nizi buraya ekleyin
 };
