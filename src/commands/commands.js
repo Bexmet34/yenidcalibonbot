@@ -42,7 +42,14 @@ const commands = [
         .addChannelOption(option =>
             option.setName('kanal')
                 .setDescription('Kayıt butonunun gönderileceği kanal')
-                .setRequired(true))
+                .setRequired(true)),
+    new SlashCommandBuilder()
+        .setName('me')
+        .setDescription('İstatistiklerinizi veya başka bir oyuncunun istatistiklerini gösterir.')
+        .addStringOption(option =>
+            option.setName('isim')
+                .setDescription('İstatistikleri görülecek oyuncunun adı')
+                .setRequired(false))
 ].map(command => command.toJSON());
 
 module.exports = commands;

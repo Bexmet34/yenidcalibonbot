@@ -4,7 +4,7 @@ dns.setDefaultResultOrder('ipv4first'); // Force IPv4 to prevent ENETUNREACH err
 const { Client, GatewayIntentBits, ActivityType } = require('discord.js');
 const config = require('./config/config');
 const { registerCommands } = require('./services/commandRegistration');
-const { handleYardimCommand, handlePveCommand, handlePartikapatCommand, handleUyelerCommand, handleKayitSistemiCommand } = require('./handlers/commandHandler');
+const { handleYardimCommand, handlePveCommand, handlePartikapatCommand, handleUyelerCommand, handleKayitSistemiCommand, handleMeCommand } = require('./handlers/commandHandler');
 const { handlePartikurCommand } = require('./handlers/partikurHandler');
 const { handlePartyButtons } = require('./handlers/buttonHandler');
 const { handlePartiModal } = require('./handlers/modalHandler');
@@ -106,6 +106,8 @@ client.on('interactionCreate', async interaction => {
                 await handleUyelerCommand(interaction);
             } else if (interaction.commandName === 'kayitsistemi') {
                 await handleKayitSistemiCommand(interaction);
+            } else if (interaction.commandName === 'me') {
+                await handleMeCommand(interaction);
             }
         }
         // Handle button interactions
