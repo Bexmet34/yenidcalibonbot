@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ quiet: true });
 const { Client, GatewayIntentBits, ActivityType } = require('discord.js');
 const config = require('./config/config');
 const { registerCommands } = require('./services/commandRegistration');
@@ -43,6 +43,7 @@ process.on('uncaughtException', error => {
 async function startBot() {
     try {
         await client.login(config.DISCORD_TOKEN);
+        console.log('[Sistem] Discord bağlantısı kuruldu, hazır olması bekleniyor...');
     } catch (error) {
         console.error('Bot login error:', error);
         setTimeout(startBot, 5000);
@@ -50,8 +51,8 @@ async function startBot() {
 }
 
 // Client ready event
-client.once('ready', async () => {
-    console.log(`[Bot] ${client.user.tag} aktif!`);
+client.once('clientReady', async () => {
+    console.log(`[Bot] ${client.user.tag} tam anlamıyla aktif!`);
 
     // GÜNCELLEME BİLDİRİMİ
     try {
