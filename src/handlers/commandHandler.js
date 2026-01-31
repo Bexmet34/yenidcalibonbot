@@ -235,11 +235,13 @@ async function handleMeCommand(interaction) {
         // 2. ID ile detaylı istatistikleri çek
         const stats = await getPlayerStats(playerData.Id);
 
-        const pve = stats.LifetimeStatistics.PvE;
-        const pvp = stats.LifetimeStatistics.PvP;
-        const gathering = stats.LifetimeStatistics.Gathering;
+        const pve = stats.LifetimeStatistics?.PvE || {};
+        const pvp = stats.LifetimeStatistics?.PvP || {};
+        const gathering = stats.LifetimeStatistics?.Gathering || {};
 
-        const kd = pvp.DeathFame > 0 ? (pvp.KillFame / pvp.DeathFame).toFixed(2) : pvp.KillFame.toFixed(2);
+        const killFame = pvp.KillFame || 0;
+        const deathFame = pvp.DeathFame || 0;
+        const kd = deathFame > 0 ? (killFame / deathFame).toFixed(2) : killFame.toFixed(2);
 
         const embed = new EmbedBuilder()
             .setTitle(`👤 Oyuncu Profili: ${stats.Name}`)
@@ -248,20 +250,20 @@ async function handleMeCommand(interaction) {
             .addFields(
                 { name: '🏰 Lonca', value: stats.GuildName || 'Yok', inline: true },
                 { name: '🆔 Player-ID', value: `\`${stats.Id}\``, inline: true },
-                { name: '⭐ Total Fame', value: stats.DeathFame.toLocaleString(), inline: true }, // Not: API bazen DeathFame'i total gibi gösterir, biz PVE+PVP toplamı yapalım
+                { name: '⭐ Total Fame', value: (stats.KillFame || 0).toLocaleString(), inline: true },
 
                 { name: '\u200b', value: '⚔️ **PVP İSTATİSTİKLERİ**', inline: false },
-                { name: '💀 Kill Fame', value: pvp.KillFame.toLocaleString(), inline: true },
-                { name: '⚰️ Death Fame', value: pvp.DeathFame.toLocaleString(), inline: true },
+                { name: '💀 Kill Fame', value: killFame.toLocaleString(), inline: true },
+                { name: '⚰️ Death Fame', value: deathFame.toLocaleString(), inline: true },
                 { name: '📊 K/D', value: kd.toString(), inline: true },
 
                 { name: '\u200b', value: '🏹 **PVE İSTATİSTİKLERİ**', inline: false },
-                { name: 'Total PVE', value: pve.Total.toLocaleString(), inline: true },
-                { name: 'Royals', value: pve.Royal.toLocaleString(), inline: true },
-                { name: 'Outlands', value: pve.Outlands.toLocaleString(), inline: true },
-                { name: 'Avalon', value: pve.Avalon.toLocaleString(), inline: true },
-                { name: 'Corrupted', value: pve.CorruptedDungeon.toLocaleString(), inline: true },
-                { name: 'Mists', value: pve.Mists.toLocaleString(), inline: true },
+                { name: 'Total PVE', value: (pve.Total || 0).toLocaleString(), inline: true },
+                { name: 'Royals', value: (pve.Royal || 0).toLocaleString(), inline: true },
+                { name: 'Outlands', value: (pve.Outlands || 0).toLocaleString(), inline: true },
+                { name: 'Avalon', value: (pve.Avalon || 0).toLocaleString(), inline: true },
+                { name: 'Corrupted', value: (pve.CorruptedDungeon || 0).toLocaleString(), inline: true },
+                { name: 'Mists', value: (pve.Mists || 0).toLocaleString(), inline: true },
 
                 { name: '\u200b', value: '⛏️ **TOPLAYICILIK & DİĞER**', inline: false },
                 { name: 'Gathering Total', value: (gathering.All?.Total || 0).toLocaleString(), inline: true },
@@ -271,9 +273,9 @@ async function handleMeCommand(interaction) {
                 { name: 'Stone', value: (gathering.Rock?.Total || 0).toLocaleString(), inline: true },
                 { name: 'Wood', value: (gathering.Wood?.Total || 0).toLocaleString(), inline: true },
 
-                { name: 'Crafting', value: stats.LifetimeStatistics.Crafting.Total.toLocaleString(), inline: true },
-                { name: 'Fishing', value: stats.LifetimeStatistics.FishingFame.toLocaleString(), inline: true },
-                { name: 'Farming', value: stats.LifetimeStatistics.FarmingFame.toLocaleString(), inline: true }
+                { name: 'Crafting', value: (stats.LifetimeStatistics?.Crafting?.Total || 0).toLocaleString(), inline: true },
+                { name: 'Fishing', value: (stats.LifetimeStatistics?.FishingFame || 0).toLocaleString(), inline: true },
+                { name: 'Farming', value: (stats.LifetimeStatistics?.FarmingFame || 0).toLocaleString(), inline: true }
             )
             .setFooter({ text: 'Veriler Albion Online Avrupa API üzerinden anlık alınmıştır.' })
             .setTimestamp();
