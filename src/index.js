@@ -9,12 +9,15 @@ const { handlePartikurCommand } = require('./handlers/partikurHandler');
 const { handlePartyButtons } = require('./handlers/buttonHandler');
 const { handlePartiModal } = require('./handlers/modalHandler');
 const { handleInteractionError } = require('./utils/interactionUtils');
+const { handleVoiceStateUpdate } = require('./handlers/voiceStateHandler');
+const { handleCreateGiveaway, handleJoinGiveaway, checkGiveaways, handleEndCommand, handleRerollCommand } = require('./handlers/giveawayHandler');
 
 // Create Discord client
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.GuildVoiceStates
     ]
 });
 
@@ -87,6 +90,9 @@ client.once('clientReady', async () => {
     }, 2000);
 
     registerCommands(client);
+
+    // Çekiliş Kontrol Döngüsü (Her 10 saniyede bir)
+    setInterval(() => checkGiveaways(client), 10000);
 });
 
 // Interaction handler
@@ -106,11 +112,20 @@ client.on('interactionCreate', async interaction => {
                 await handleUyelerCommand(interaction);
             } else if (interaction.commandName === 'kayitsistemi') {
                 await handleKayitSistemiCommand(interaction);
+            } else if (interaction.commandName === 'cekilis') {
+                const sub = interaction.options.getSubcommand();
+                if (sub === 'baslat') await handleCreateGiveaway(interaction);
+                else if (sub === 'bitir') await handleEndCommand(interaction);
+                else if (sub === 'yenile') await handleRerollCommand(interaction);
             }
         }
         // Handle button interactions
         else if (interaction.isButton()) {
-            await handlePartyButtons(interaction);
+            if (interaction.customId === 'giveaway_join') {
+                await handleJoinGiveaway(interaction);
+            } else {
+                await handlePartyButtons(interaction);
+            }
         }
         // Handle modal submissions
         else if (interaction.isModalSubmit()) {
@@ -118,6 +133,15 @@ client.on('interactionCreate', async interaction => {
         }
     } catch (error) {
         await handleInteractionError(interaction, error);
+    }
+});
+
+// Voice state handler
+client.on('voiceStateUpdate', async (oldState, newState) => {
+    try {
+        await handleVoiceStateUpdate(oldState, newState);
+    } catch (error) {
+        console.error('Voice state error:', error);
     }
 });
 

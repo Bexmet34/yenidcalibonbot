@@ -42,7 +42,26 @@ const commands = [
         .addChannelOption(option =>
             option.setName('kanal')
                 .setDescription('Kayıt butonunun gönderileceği kanal')
-                .setRequired(true))
+                .setRequired(true)),
+    new SlashCommandBuilder()
+        .setName('cekilis')
+        .setDescription('Çekiliş işlemlerini yönetir.')
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator) // Sadece yetkililer
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName('baslat')
+                .setDescription('Yeni bir çekiliş başlatır.')
+                .addStringOption(option => option.setName('odul').setDescription('Verilecek ödül').setRequired(true))
+                .addStringOption(option => option.setName('sure').setDescription('Süre (örn: 10dk, 2sa, 1g)').setRequired(true))
+                .addIntegerOption(option => option.setName('kazanan').setDescription('Kazanan sayısı').setRequired(false)))
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName('bitir')
+                .setDescription('Kanalda aktif olan çekilişi anında bitirir.'))
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName('yenile')
+                .setDescription('Son çekilişin kazananını yeniden seçer.'))
 ].map(command => command.toJSON());
 
 module.exports = commands;

@@ -1,0 +1,91 @@
+[
+  {
+    "messageId": "1467977281338347614",
+    "channelId": "1467704231749484626",
+    "guildId": "1434334285447561288",
+    "prize": "deneme",
+    "endTime": 1770063439143,
+    "winnerCount": 1,
+    "participants": [
+      "407234961582587916"
+    ],
+    "hostId": "407234961582587916",
+    "ended": true
+  },
+  {
+    "messageId": "1467977849536249927",
+    "channelId": "1467704231749484626",
+    "guildId": "1434334285447561288",
+    "prize": "Deneme",
+    "endTime": 1770063574922,
+    "winnerCount": 1,
+    "participants": [
+      "407234961582587916"
+    ],
+    "hostId": "407234961582587916",
+    "ended": true
+  },
+  {
+    "messageId": "1467977849561678026",
+    "channelId": "1467704231749484626",
+    "guildId": "1434334285447561288",
+    "prize": "Deneme",
+    "endTime": 1770063574910,
+    "winnerCount": 1,
+    "participants": [
+      "407234961582587916"
+    ],
+    "hostId": "407234961582587916",
+    "ended": true
+  },
+  {
+    "messageId": "1467977953676623975",
+    "channelId": "1467704231749484626",
+    "guildId": "1434334285447561288",
+    "prize": "dsada",
+    "endTime": 1770063599579,
+    "winnerCount": 1,
+    "participants": [],
+    "hostId": "407234961582587916",
+    "ended": true
+  },
+  {
+    "messageId": "1467977953823424674",
+    "channelId": "1467704231749484626",
+    "guildId": "1434334285447561288",
+    "prize": "dsada",
+    "endTime": 1770063599583,
+    "winnerCount": 1,
+    "participants": [
+      "407234961582587916"
+    ],
+    "hostId": "407234961582587916",
+    "ended": true
+  },
+  {
+    "messageId": "1467978296644993236",
+    "channelId": "1467704231749484626",
+    "guildId": "1434334285447561288",
+    "prize": "sad",
+    "endTime": 1770063681329,
+    "winnerCount": 1,
+    "participants": [
+      "407234961582587916"
+    ],
+    "hostId": "407234961582587916",
+    "ended": true
+  },
+  {
+    "messageId": "1467978962746605588",
+    "channelId": "1467704231749484626",
+    "guildId": "1434334285447561288",
+    "prize": "asd",
+    "endTime": 1770063840200,
+    "winnerCount": 1,
+    "participants": [
+      "407234961582587916"
+    ],
+    "hostId": "407234961582587916",
+    "ended": false
+  }
+]
