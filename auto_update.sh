@@ -49,6 +49,7 @@ while true; do
                 
                 if [ $? -eq 0 ]; then
                     echo -e "${GREEN}✅ Bot ($BOT_PROCESS_NAME) başarıyla yeniden başlatıldı.${NC}"
+                    touch .update_success # Botun güncellendiğini belirtmek için dosya oluştur
                 else
                     echo -e "${RED}❌ Bot yeniden başlatılamadı! PM2 process isminin '$BOT_PROCESS_NAME' olduğundan emin olun.${NC}"
                     echo -e "${YELLOW}💡 İpucu: Botunuzu 'pm2 start src/index.js --name $BOT_PROCESS_NAME' ile başlattınız mı?${NC}"

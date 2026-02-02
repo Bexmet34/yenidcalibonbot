@@ -3,6 +3,8 @@ const dns = require('node:dns');
 dns.setDefaultResultOrder('ipv4first'); // Force IPv4 to prevent ENETUNREACH errors on VPS
 const { Client, GatewayIntentBits, ActivityType } = require('discord.js');
 const config = require('./config/config');
+const fs = require('fs');
+const path = require('path');
 const { registerCommands } = require('./services/commandRegistration');
 const { handleYardimCommand, handlePveCommand, handlePartikapatCommand, handleUyelerCommand, handleKayitSistemiCommand, handleMeCommand } = require('./handlers/commandHandler');
 const { handlePartikurCommand } = require('./handlers/partikurHandler');
@@ -79,6 +81,24 @@ client.once('clientReady', async () => {
             console.error('[Sistem] Çekiliş kontrolü sırasında hata:', error);
         }
     }, 10000);
+
+    // Güncelleme Bildirimi Kontrolü
+    const updateFilePath = path.join(process.cwd(), '.update_success');
+    if (fs.existsSync(updateFilePath)) {
+        try {
+            const ownerId = config.WHITELIST_USERS[0];
+            if (ownerId) {
+                const owner = await client.users.fetch(ownerId);
+                if (owner) {
+                    await owner.send('🚀 **Bot Başarıyla Güncellendi!**\nGitHub\'dan en son değişiklikler çekildi ve bot yeniden başlatıldı. Sistem şu an aktif.');
+                    console.log(`[Bildirim] Güncelleme mesajı ${owner.tag} kullanıcısına gönderildi.`);
+                }
+            }
+            fs.unlinkSync(updateFilePath); // Dosyayı sil
+        } catch (err) {
+            console.error('[Bildirim] Güncelleme mesajı gönderilirken hata:', err);
+        }
+    }
 });
 
 // Interaction handler
