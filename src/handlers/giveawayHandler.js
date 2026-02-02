@@ -222,7 +222,19 @@ ${winnerString}
         }
 
     } catch (error) {
-        console.error(`Giveaway End Error [${giveaway.messageId}]:`, error);
+        console.error(`Giveaway End Error [${giveaway.messageId}]:`, error.message);
+
+        // Eğer mesaj veya kanal silindiyse, veritabanında bu çekilişi sonlandırılmış olarak işaretle
+        // 10008: Unknown Message, 10003: Unknown Channel
+        if (error.code === 10008 || error.code === 10003) {
+            console.log(`[Giveaway] Mesaj veya kanal bulunamadı (${error.code}). Çekiliş veritabanından kapatılıyor.`);
+            const allGiveaways = getGiveaways();
+            const index = allGiveaways.findIndex(g => g.messageId === giveaway.messageId);
+            if (index !== -1) {
+                allGiveaways[index].ended = true;
+                saveGiveaways(allGiveaways);
+            }
+        }
     }
 }
 
