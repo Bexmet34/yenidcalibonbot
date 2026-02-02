@@ -52,7 +52,8 @@ const commands = [
                 .setDescription('Yeni bir çekiliş başlatır.')
                 .addStringOption(option => option.setName('odul').setDescription('Verilecek ödül').setRequired(true))
                 .addStringOption(option => option.setName('sure').setDescription('Süre (örn: 10dk, 2sa, 1g)').setRequired(true))
-                .addIntegerOption(option => option.setName('kazanan').setDescription('Kazanan sayısı').setRequired(false)))
+                .addIntegerOption(option => option.setName('kazanan').setDescription('Kazanan sayısı').setRequired(false))
+                .addAttachmentOption(option => option.setName('resim').setDescription('Çekiliş görseli').setRequired(false)))
         .addSubcommand(subcommand =>
             subcommand
                 .setName('bitir')

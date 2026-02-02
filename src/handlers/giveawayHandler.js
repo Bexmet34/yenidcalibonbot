@@ -38,6 +38,7 @@ async function handleCreateGiveaway(interaction) {
     const prize = interaction.options.getString('odul');
     const durationStr = interaction.options.getString('sure');
     const winnerCount = interaction.options.getInteger('kazanan') || 1;
+    const imageAttachment = interaction.options.getAttachment('resim');
 
     const durationMs = parseDuration(durationStr);
     if (!durationMs) {
@@ -68,6 +69,10 @@ Bol şans savaşçı! ⚔️
         .setThumbnail('https://render.albiononline.com/v1/item/TREASURECHEST_KEY_T8_0.png') // T8 Chest Key (temsili)
         .setFooter({ text: 'Albion Çekiliş Sistemi', iconURL: interaction.guild.iconURL() })
         .setTimestamp(endTime);
+
+    if (imageAttachment) {
+        embed.setImage(imageAttachment.url);
+    }
 
     // Buton Oluştur
     const button = new ActionRowBuilder().addComponents(
