@@ -46,7 +46,6 @@ const commands = [
     new SlashCommandBuilder()
         .setName('cekilis')
         .setDescription('Çekiliş işlemlerini yönetir. ')
-        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator) // Sadece yetkililer
         .addSubcommand(subcommand =>
             subcommand
                 .setName('baslat')
