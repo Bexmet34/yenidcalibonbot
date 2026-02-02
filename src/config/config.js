@@ -15,5 +15,6 @@ module.exports = {
     WHITELIST_USERS: ['407234961582587916'], // Kendi ID'nizi buraya ekleyin
 
     // Log Kanalları (Birden fazla eklenebilir)
-    LOG_CHANNELS: [],
+    // Log Kanalları (Birden fazla eklenebilir, .env dosyasından virgülle ayrılmış liste olarak okunur)
+    LOG_CHANNELS: process.env.LOG_CHANNELS ? process.env.LOG_CHANNELS.split(',') : [],
 };
