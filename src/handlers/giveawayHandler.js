@@ -33,6 +33,7 @@ function saveGiveaways(data) {
  * Başlatılan çekilişi oluşturur
  */
 async function handleCreateGiveaway(interaction) {
+    console.log('[Giveaway] Create command started by:', interaction.user.tag);
     const prize = interaction.options.getString('odul');
     const durationStr = interaction.options.getString('sure');
     const winnerCount = interaction.options.getInteger('kazanan') || 1;
@@ -76,21 +77,29 @@ Bol şans savaşçı! ⚔️
     );
 
     const message = await interaction.channel.send({ embeds: [embed], components: [button] });
+    console.log('[Giveaway] Message sent, ID:', message.id);
 
-    // Veritabanına Kayıt
-    const giveaways = getGiveaways();
-    giveaways.push({
-        messageId: message.id,
-        channelId: message.channel.id,
-        guildId: message.guild.id,
-        prize: prize,
-        endTime: endTime,
-        winnerCount: winnerCount,
-        participants: [],
-        hostId: interaction.user.id,
-        ended: false
-    });
-    saveGiveaways(giveaways);
+    try {
+        // Veritabanına Kayıt
+        const giveaways = getGiveaways();
+        console.log('[Giveaway] DB read success. Current count:', giveaways.length);
+        giveaways.push({
+            messageId: message.id,
+            channelId: message.channel.id,
+            guildId: message.guild.id,
+            prize: prize,
+            endTime: endTime,
+            winnerCount: winnerCount,
+            participants: [],
+            hostId: interaction.user.id,
+            ended: false
+        });
+        saveGiveaways(giveaways);
+        console.log('[Giveaway] DB save success.');
+    } catch (dbErr) {
+        console.error('[Giveaway] DB Error:', dbErr);
+        // Reply anyway so user knows message was sent but tracking might fail
+    }
 
     await interaction.reply({ content: `✅ Çekiliş başarıyla oluşturuldu!`, flags: MessageFlags.Ephemeral });
 }
