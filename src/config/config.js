@@ -26,7 +26,6 @@ module.exports = {
 
     // Log Kanalları (Birden fazla eklenebilir)
     LOG_CHANNELS: [
-        '1467277133914308853',
-        ''
+        // '1467277133914308853', // Geçersiz ID kaldırıldı
     ],
 };
