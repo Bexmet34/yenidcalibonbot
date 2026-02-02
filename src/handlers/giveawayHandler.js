@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const config = require('../config/config');
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require('discord.js');
 const { parseDuration } = require('../utils/timeUtils');
 
@@ -224,10 +225,9 @@ ${winnerString}
     } catch (error) {
         console.error(`Giveaway End Error [${giveaway.messageId}]:`, error.message);
 
-        // Eğer mesaj veya kanal silindiyse, veritabanında bu çekilişi sonlandırılmış olarak işaretle
-        // 10008: Unknown Message, 10003: Unknown Channel
-        if (error.code === 10008 || error.code === 10003) {
-            console.log(`[Giveaway] Mesaj veya kanal bulunamadı (${error.code}). Çekiliş veritabanından kapatılıyor.`);
+        // Eğer mesaj/kanal silindiyse (10008, 10003) veya botun erişimi yoksa (50001)
+        if (error.code === 10008 || error.code === 10003 || error.code === 50001) {
+            console.log(`[Giveaway] Mesaj/Kanal sorunu veya yetki yok (${error.code}). Çekiliş veritabanından kapatılıyor.`);
             const allGiveaways = getGiveaways();
             const index = allGiveaways.findIndex(g => g.messageId === giveaway.messageId);
             if (index !== -1) {
