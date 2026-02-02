@@ -19,3 +19,7 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+# Data Files (Prevent conflicts and resets)
+src/data/*.json
+!src/data/.gitkeep
