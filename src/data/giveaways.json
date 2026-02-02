@@ -98,5 +98,18 @@
     "participants": [],
     "hostId": "407234961582587916",
     "ended": true
+  },
+  {
+    "messageId": "1467992490865987800",
+    "channelId": "1467704231749484626",
+    "guildId": "1434334285447561288",
+    "prize": "Heal 4.4 +27 mob fame",
+    "endTime": 1770067065748,
+    "winnerCount": 1,
+    "participants": [
+      "407234961582587916"
+    ],
+    "hostId": "407234961582587916",
+    "ended": false
   }
 ]
