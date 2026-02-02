@@ -6,7 +6,7 @@ const { buildPvePayload } = require('../builders/payloadBuilder');
 const { safeReply } = require('../utils/interactionUtils');
 const { hasActiveParty, setActiveParty, getActiveParty, removeActiveParty } = require('../services/partyManager');
 const { createClosedButton } = require('../builders/componentBuilder');
-const { getEuropeGuildMembers } = require('../services/albionApiService');
+const { getEuropeGuildMembers, searchPlayer, getPlayerStats } = require('../services/albionApiService');
 
 /**
  * Handles /yardim command
@@ -211,11 +211,89 @@ async function handleKayitSistemiCommand(interaction) {
     }
 }
 
+/**
+ * Handles /me command
+ */
+async function handleMeCommand(interaction) {
+    let ign = interaction.options.getString('isim');
+
+    // Eğer isim girilmediyse, kullanıcının nickname'inden çekmeyi dene (İsim (Gerçek İsim) formatı)
+    if (!ign) {
+        const nickname = interaction.member.nickname || interaction.member.user.globalName || interaction.member.user.username;
+        ign = nickname.split(' ')[0].replace(/[()]/g, '');
+    }
+
+    await interaction.deferReply();
+
+    try {
+        // 1. Oyuncuyu ara ve ID'sini bul
+        const playerData = await searchPlayer(ign);
+        if (!playerData) {
+            return await interaction.editReply({ content: `❌ **${ign}** isminde bir oyuncu Avrupa sunucusunda bulunamadı.` });
+        }
+
+        // 2. ID ile detaylı istatistikleri çek
+        const stats = await getPlayerStats(playerData.Id);
+
+        const pve = stats.LifetimeStatistics?.PvE || {};
+        const pvp = stats.LifetimeStatistics?.PvP || {};
+        const gathering = stats.LifetimeStatistics?.Gathering || {};
+
+        const killFame = pvp.KillFame || 0;
+        const deathFame = pvp.DeathFame || 0;
+        const kd = deathFame > 0 ? (killFame / deathFame).toFixed(2) : killFame.toFixed(2);
+
+        const embed = new EmbedBuilder()
+            .setTitle(`👤 Oyuncu Profili: ${stats.Name}`)
+            .setColor('#3498DB')
+            .setThumbnail(`https://render.albiononline.com/v1/spell/PLAYER_PORTRAIT_FARMER.png`) // Geçici ikon
+            .addFields(
+                { name: '🏰 Lonca', value: stats.GuildName || 'Yok', inline: true },
+                { name: '🆔 Player-ID', value: `\`${stats.Id}\``, inline: true },
+                { name: '⭐ Total Fame', value: (stats.KillFame || 0).toLocaleString(), inline: true },
+
+                { name: '\u200b', value: '⚔️ **PVP İSTATİSTİKLERİ**', inline: false },
+                { name: '💀 Kill Fame', value: killFame.toLocaleString(), inline: true },
+                { name: '⚰️ Death Fame', value: deathFame.toLocaleString(), inline: true },
+                { name: '📊 K/D', value: kd.toString(), inline: true },
+
+                { name: '\u200b', value: '🏹 **PVE İSTATİSTİKLERİ**', inline: false },
+                { name: 'Total PVE', value: (pve.Total || 0).toLocaleString(), inline: true },
+                { name: 'Royals', value: (pve.Royal || 0).toLocaleString(), inline: true },
+                { name: 'Outlands', value: (pve.Outlands || 0).toLocaleString(), inline: true },
+                { name: 'Avalon', value: (pve.Avalon || 0).toLocaleString(), inline: true },
+                { name: 'Corrupted', value: (pve.CorruptedDungeon || 0).toLocaleString(), inline: true },
+                { name: 'Mists', value: (pve.Mists || 0).toLocaleString(), inline: true },
+
+                { name: '\u200b', value: '⛏️ **TOPLAYICILIK & DİĞER**', inline: false },
+                { name: 'Gathering Total', value: (gathering.All?.Total || 0).toLocaleString(), inline: true },
+                { name: 'Fiber', value: (gathering.Fiber?.Total || 0).toLocaleString(), inline: true },
+                { name: 'Hide', value: (gathering.Hide?.Total || 0).toLocaleString(), inline: true },
+                { name: 'Ore', value: (gathering.Ore?.Total || 0).toLocaleString(), inline: true },
+                { name: 'Stone', value: (gathering.Rock?.Total || 0).toLocaleString(), inline: true },
+                { name: 'Wood', value: (gathering.Wood?.Total || 0).toLocaleString(), inline: true },
+
+                { name: 'Crafting', value: (stats.LifetimeStatistics?.Crafting?.Total || 0).toLocaleString(), inline: true },
+                { name: 'Fishing', value: (stats.LifetimeStatistics?.FishingFame || 0).toLocaleString(), inline: true },
+                { name: 'Farming', value: (stats.LifetimeStatistics?.FarmingFame || 0).toLocaleString(), inline: true }
+            )
+            .setFooter({ text: 'Veriler Albion Online Avrupa API üzerinden anlık alınmıştır.' })
+            .setTimestamp();
+
+        return await interaction.editReply({ embeds: [embed] });
+
+    } catch (error) {
+        console.error('[MeCommand] Hata:', error);
+        return await interaction.editReply({ content: `❌ İstatistikler çekilirken bir hata oluştu: ${error.message}` });
+    }
+}
+
 module.exports = {
     handleYardimCommand,
     handlePveCommand,
     handlePartikapatCommand,
     handleUyelerCommand,
     handleKayitSistemiCommand,
+    handleMeCommand,
     createMemberPageEmbed
 };

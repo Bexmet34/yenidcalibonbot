@@ -61,8 +61,14 @@ const commands = [
         .addSubcommand(subcommand =>
             subcommand
                 .setName('yenile')
-                .setDescription('Son çekilişin kazananını yeniden seçer.'))
+                .setDescription('Son çekilişin kazananını yeniden seçer.')),
+    new SlashCommandBuilder()
+        .setName('me')
+        .setDescription('İstatistiklerinizi veya başka bir oyuncunun istatistiklerini gösterir.')
+        .addStringOption(option =>
+            option.setName('isim')
+                .setDescription('İstatistikleri görülecek oyuncunun adı')
+                .setRequired(false))
 ].map(command => command.toJSON());
 
 module.exports = commands;
-
