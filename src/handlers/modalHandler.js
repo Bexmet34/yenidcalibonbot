@@ -20,10 +20,11 @@ async function handlePartiModal(interaction) {
 
         const header = interaction.fields.getTextInputValue('party_header');
         const rolesRaw = interaction.fields.getTextInputValue('party_roles');
+        const description = interaction.fields.getTextInputValue('party_description') || '';
         const rolesList = rolesRaw.split('\n').map(r => r.trim()).filter(r => r.length > 0);
 
         // Send and capture message
-        const msg = await safeReply(interaction, { content: '@everyone', ...buildPartikurPayload(header, rolesList, userId) });
+        const msg = await safeReply(interaction, { content: '@everyone', ...buildPartikurPayload(header, rolesList, userId, description) });
 
         const msgId = msg?.id;
         const chanId = msg?.channelId || interaction.channelId;

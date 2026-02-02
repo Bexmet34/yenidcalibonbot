@@ -19,8 +19,8 @@ function buildPvePayload(title, details, content, dpsCount, ownerId) {
 /**
  * Builds custom party payload with embed and components
  */
-function buildPartikurPayload(header, rolesList, ownerId) {
-    const embed = createPartikurEmbed(header, rolesList);
+function buildPartikurPayload(header, rolesList, ownerId, description = '') {
+    const embed = createPartikurEmbed(header, rolesList, description);
 
     // Add spacer and header
     embed.addFields(

@@ -31,9 +31,17 @@ async function handlePartikurCommand(interaction) {
         .setStyle(TextInputStyle.Paragraph)
         .setRequired(true);
 
+    const descriptionInput = new TextInputBuilder()
+        .setCustomId('party_description')
+        .setLabel('Parti Açıklaması / Notlar')
+        .setPlaceholder('Örn: 6.4/T7 Setler, WP zorunlu, şunları çekin...')
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(false);
+
     modal.addComponents(
         new ActionRowBuilder().addComponents(headerInput),
-        new ActionRowBuilder().addComponents(rolesInput)
+        new ActionRowBuilder().addComponents(rolesInput),
+        new ActionRowBuilder().addComponents(descriptionInput)
     );
 
     await interaction.showModal(modal);

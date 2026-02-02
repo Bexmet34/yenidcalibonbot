@@ -45,8 +45,11 @@ function createEmbed(title, details, content, roles, isClosed = false) {
 /**
  * Creates a custom party embed
  */
-function createPartikurEmbed(header, rolesList) {
+function createPartikurEmbed(header, rolesList, description = '') {
     let desc = `📋 Parti başvurusu açıldı.`;
+    if (description) {
+        desc += `\n\n📝 **Parti Notları:**\n${description}`;
+    }
 
     const embed = new EmbedBuilder()
         .setTitle(`🛡️ Turquoise | ${header}`)
