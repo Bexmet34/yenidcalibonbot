@@ -59,26 +59,6 @@ async function startBot() {
 client.once('clientReady', async () => {
     console.log(`[Bot] ${client.user.tag} tam anlamıyla aktif!`);
 
-    // GÜNCELLEME BİLDİRİMİ
-    try {
-        if (config.LOG_CHANNELS && config.LOG_CHANNELS.length > 0) {
-            for (const channelId of config.LOG_CHANNELS) {
-                if (!channelId || channelId.trim() === '') continue; // Skip empty strings
-                try {
-                    const notifyChannel = await client.channels.fetch(channelId);
-                    if (notifyChannel) {
-                        await notifyChannel.send('🚀 **Bot başarıyla yeniden başlatıldı ve güncellemeler uygulandı!**');
-                        console.log(`[Sistem] Güncelleme bildirimi gönderildi: ${channelId}`);
-                    }
-                } catch (err) {
-                    console.error(`[Sistem] Kanal ${channelId} bulunamadı veya mesaj gönderilemedi:`, err.message);
-                }
-            }
-        }
-    } catch (err) {
-        console.error('[Bot] Başlatma mesajı gönderilemedi:', err);
-    }
-
     // Set activity safely with a small delay and error handling
     setTimeout(() => {
         try {
@@ -92,7 +72,13 @@ client.once('clientReady', async () => {
     registerCommands(client);
 
     // Çekiliş Kontrol Döngüsü (Her 10 saniyede bir)
-    setInterval(() => checkGiveaways(client), 10000);
+    setInterval(async () => {
+        try {
+            await checkGiveaways(client);
+        } catch (error) {
+            console.error('[Sistem] Çekiliş kontrolü sırasında hata:', error);
+        }
+    }, 10000);
 });
 
 // Interaction handler
