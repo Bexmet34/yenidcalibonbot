@@ -9,7 +9,7 @@ const { handlePartikurCommand } = require('./handlers/partikurHandler');
 const { handlePartyButtons } = require('./handlers/buttonHandler');
 const { handlePartiModal } = require('./handlers/modalHandler');
 const { handleInteractionError } = require('./utils/interactionUtils');
-const { handleVoiceStateUpdate } = require('./handlers/voiceStateHandler');
+
 const { handleCreateGiveaway, handleJoinGiveaway, checkGiveaways, handleEndCommand, handleRerollCommand } = require('./handlers/giveawayHandler');
 
 // Create Discord client
@@ -138,14 +138,7 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// Voice state handler
-client.on('voiceStateUpdate', async (oldState, newState) => {
-    try {
-        await handleVoiceStateUpdate(oldState, newState);
-    } catch (error) {
-        console.error('Voice state error:', error);
-    }
-});
+// Voice state handler removed per user request
 
 // Start the bot
 startBot();

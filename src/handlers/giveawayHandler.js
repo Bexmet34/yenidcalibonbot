@@ -4,9 +4,14 @@ const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags
 const { parseDuration } = require('../utils/timeUtils');
 
 const DATA_FILE = path.join(__dirname, '../data/giveaways.json');
+const DATA_DIR = path.dirname(DATA_FILE);
 
 // Helper: Read Data
 function getGiveaways() {
+    if (!fs.existsSync(DATA_DIR)) {
+        fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+
     if (!fs.existsSync(DATA_FILE)) {
         fs.writeFileSync(DATA_FILE, '[]');
         return [];

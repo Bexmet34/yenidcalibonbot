@@ -87,5 +87,16 @@
     ],
     "hostId": "407234961582587916",
     "ended": false
+  },
+  {
+    "messageId": "1467986401294286982",
+    "channelId": "1467704231749484626",
+    "guildId": "1434334285447561288",
+    "prize": "asd",
+    "endTime": 1770065613622,
+    "winnerCount": 1,
+    "participants": [],
+    "hostId": "407234961582587916",
+    "ended": true
   }
 ]
