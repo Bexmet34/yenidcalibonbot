@@ -3,7 +3,7 @@
 # Yapılandırma
 BRANCH="main" # Reponuzun ana branşı (genellikle main veya master)
 CHECK_INTERVAL=60 # Kaç saniyede bir kontrol edilecek (varsayılan 60sn)
-BOT_PROCESS_NAME="albionbot" # Botunuzun PM2'deki adı
+BOT_PROCESS_NAME="yenidcalibon" # Botunuzun PM2'deki adı
 
 # Renkler
 GREEN='\033[0;32m'
