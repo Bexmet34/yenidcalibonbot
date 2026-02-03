@@ -79,7 +79,7 @@ function updateButtonStates(oldComponents, newFields) {
     const rows = [];
 
     // Helper function to check if a slot is empty
-    const isEmptySlot = (value) => value === '`Boş Slot`' || value.includes(EMPTY_SLOT);
+    const isEmptySlot = (value) => value === '-' || value === '`Boş Slot`' || value.includes(EMPTY_SLOT);
 
     for (const oldRow of oldComponents) {
         const newRow = new ActionRowBuilder();

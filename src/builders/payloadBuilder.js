@@ -19,16 +19,15 @@ function buildPvePayload(title, details, content, dpsCount, ownerId) {
 /**
  * Builds custom party payload with embed and components
  */
-function buildPartikurPayload(header, rolesList, ownerId, description = '') {
-    const embed = createPartikurEmbed(header, rolesList, description);
+function buildPartikurPayload(header, rolesList, ownerId, description = '', content = '') {
+    const embed = createPartikurEmbed(header, rolesList, description, content, 0);
 
-    // Add spacer and header
+    // Add header
     embed.addFields(
-        { name: '\u200b', value: '\u200b', inline: false },
         { name: '👥 **PARTİ KADROSU**', value: '\u200b', inline: false }
     );
 
-    // Add roles with better formatting
+    // Add roles with numbering and status indicators
     rolesList.forEach((role, index) => {
         let icon = ROLE_ICONS.DEFAULT;
         const lower = role.toLowerCase();
@@ -37,8 +36,8 @@ function buildPartikurPayload(header, rolesList, ownerId, description = '') {
         else if (lower.includes('dps') || lower.includes('damage') || lower.includes('⚔️')) icon = ROLE_ICONS.DPS;
 
         embed.addFields({
-            name: `${icon} ${role}`,
-            value: '`Boş Slot`',
+            name: `🟡 ${index + 1}. ${role}:`,
+            value: '-',
             inline: false
         });
     });

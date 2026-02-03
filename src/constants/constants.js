@@ -1,5 +1,5 @@
 // Slot and Party Constants
-const EMPTY_SLOT = '****';
+const EMPTY_SLOT = '-';
 
 // Default Content
 const DEFAULT_CONTENT = "STATİK RAT\nTRACKİNG BİZİM MAP\nGRUP CAMP BOSS LAIRY\nKRİSTAL";

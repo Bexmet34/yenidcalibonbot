@@ -4,6 +4,7 @@ const { updateButtonStates, createClosedButton } = require('../builders/componen
 const { removeActiveParty } = require('../services/partyManager');
 const { getEuropeGuildMembers } = require('../services/albionApiService');
 const { createMemberPageEmbed } = require('./commandHandler');
+const { createProgressBar } = require('../builders/embedBuilder');
 
 /**
  * Handles join and leave button interactions
@@ -114,12 +115,16 @@ async function handlePartyButtons(interaction) {
     const isUserInAnySlot = fields.some(f => f.value.includes(userId));
 
     // Helper function to check if a slot is empty
-    const isEmptySlot = (value) => value === '`Boş Slot`' || value.includes(EMPTY_SLOT);
+    const isEmptySlot = (value) => value === '-' || value === '`Boş Slot`' || value.includes(EMPTY_SLOT);
 
     if (customId === 'leave') {
         fields = fields.map(f => {
             if (f.value.includes(userId)) {
-                return { ...f, value: '`Boş Slot`' };
+                return {
+                    ...f,
+                    name: f.name.replace('🔴', '🟡'),
+                    value: '-'
+                };
             }
             return f;
         });
@@ -128,21 +133,17 @@ async function handlePartyButtons(interaction) {
         if (isUserInAnySlot) {
             fields = fields.map(f => {
                 if (f.value.includes(userId)) {
-                    return { ...f, value: '`Boş Slot`' };
+                    return {
+                        ...f,
+                        name: f.name.replace('🔴', '🟡'),
+                        value: '-'
+                    };
                 }
                 return f;
             });
         }
 
         let targetIndex = -1;
-
-        // Find the correct field index (skip spacers and headers)
-        const roleFields = fields.filter((f, i) =>
-            !f.name.includes('👥') &&
-            !f.name.includes('📌') &&
-            f.name !== '\u200b' &&
-            !f.name.includes('KURALLAR')
-        );
 
         if (customId === 'join_tank') {
             targetIndex = fields.findIndex(f => f.name.includes('Tank') && !f.name.includes('👥'));
@@ -176,13 +177,26 @@ async function handlePartyButtons(interaction) {
         if (targetIndex !== -1) {
             if (isEmptySlot(fields[targetIndex].value)) {
                 fields[targetIndex].value = `<@${userId}>`;
+                fields[targetIndex].name = fields[targetIndex].name.replace('🟡', '🔴');
             } else {
                 return interaction.reply({ content: '❌ Bu slot dolu!', flags: [MessageFlags.Ephemeral] });
             }
         }
     }
 
-    const newEmbed = EmbedBuilder.from(oldEmbed).setFields(fields);
+    // Recalculate filled slots for progress bar
+    const roleFields = fields.filter(f =>
+        !f.name.includes('👥') &&
+        !f.name.includes('📌') &&
+        f.name !== '\u200b' &&
+        !f.name.includes('KURALLAR')
+    );
+    const filledCount = roleFields.filter(f => !isEmptySlot(f.value)).length;
+    const totalCount = roleFields.length;
+
+    const newEmbed = EmbedBuilder.from(oldEmbed)
+        .setFields(fields)
+        .setFooter({ text: `Doluluk: ${createProgressBar(filledCount, totalCount)}` });
 
     // Re-generate components to update "DOLU" status
     const newComponents = updateButtonStates(message.components, fields);

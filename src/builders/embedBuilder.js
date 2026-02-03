@@ -19,34 +19,54 @@ function createEmbed(title, details, content, roles, isClosed = false) {
         .setDescription(description)
         .setColor(isClosed ? '#808080' : '#F1C40F')
         .addFields(
-            { name: '\u200b', value: '\u200b', inline: false }, // Spacer
             { name: '👥 **PARTİ KADROSU**', value: '\u200b', inline: false },
             {
-                name: `${ROLE_ICONS.TANK} Tank`,
-                value: roles.tank === '****' ? '`Boş Slot`' : roles.tank,
+                name: `${roles.tank === '-' ? '🟡' : '🔴'} 1. Tank:`,
+                value: roles.tank,
                 inline: false
             },
             {
-                name: `${ROLE_ICONS.HEAL} Heal`,
-                value: roles.heal === '****' ? '`Boş Slot`' : roles.heal,
+                name: `${roles.heal === '-' ? '🟡' : '🔴'} 2. Heal:`,
+                value: roles.heal,
                 inline: false
             },
             ...roles.dps.map((d, index) => ({
-                name: `${ROLE_ICONS.DPS} DPS ${index + 1}`,
-                value: d === '****' ? '`Boş Slot`' : d,
+                name: `${d === '-' ? '🟡' : '🔴'} ${index + 3}. DPS:`,
+                value: d,
                 inline: false
-            })),
-            { name: '\u200b', value: '\u200b', inline: false }
+            }))
         );
+
+    if (!isClosed) {
+        // Calculate counts for progress bar
+        const total = 2 + roles.dps.length;
+        const filled = [roles.tank, roles.heal, ...roles.dps].filter(v => v !== '-').length;
+        embed.setFooter({ text: `Doluluk: ${createProgressBar(filled, total)}` });
+    }
 
     return embed;
 }
 
 /**
+ * Creates a progress bar for the footer
+ */
+function createProgressBar(current, total) {
+    const size = 15;
+    const progress = Math.round((size * current) / total);
+    const emptyProgress = size - progress;
+
+    const progressText = '█'.repeat(progress);
+    const emptyProgressText = '░'.repeat(emptyProgress);
+    const percentage = Math.round((current / total) * 100);
+
+    return `[${progressText}${emptyProgressText}] ${current}/${total} (%${percentage})`;
+}
+
+/**
  * Creates a custom party embed
  */
-function createPartikurEmbed(header, rolesList, description = '') {
-    let desc = `📋 Parti başvurusu açıldı.`;
+function createPartikurEmbed(header, rolesList, description = '', content = '', currentCount = 0) {
+    let desc = `📍 **Çıkış Yeri:** ${content}`;
     if (description) {
         desc += `\n\n📝 **Parti Notları:**\n${description}`;
     }
@@ -54,7 +74,8 @@ function createPartikurEmbed(header, rolesList, description = '') {
     const embed = new EmbedBuilder()
         .setTitle(`🛡️ Turquoise | ${header}`)
         .setDescription(desc)
-        .setColor('#F1C40F');
+        .setColor('#F1C40F')
+        .setFooter({ text: `Doluluk: ${createProgressBar(currentCount, rolesList.length)}` });
 
     return embed;
 }
@@ -78,5 +99,6 @@ function createHelpEmbed() {
 module.exports = {
     createEmbed,
     createPartikurEmbed,
-    createHelpEmbed
+    createHelpEmbed,
+    createProgressBar
 };

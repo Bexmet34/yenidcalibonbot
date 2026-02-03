@@ -24,6 +24,13 @@ async function handlePartikurCommand(interaction) {
         .setStyle(TextInputStyle.Short)
         .setRequired(true);
 
+    const contentInput = new TextInputBuilder()
+        .setCustomId('party_content')
+        .setLabel('İçerik Başlangıç Yeri')
+        .setPlaceholder('Örn: Berylo, Lymhurst, Fort Sterling...')
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true);
+
     const rolesInput = new TextInputBuilder()
         .setCustomId('party_roles')
         .setLabel('Roller')
@@ -34,12 +41,13 @@ async function handlePartikurCommand(interaction) {
     const descriptionInput = new TextInputBuilder()
         .setCustomId('party_description')
         .setLabel('Parti Açıklaması / Notlar')
-        .setPlaceholder('Örn: 6.4/T7 Setler, WP zorunlu, şunları çekin...')
+        .setPlaceholder('Örn: T6-7 ayar. Kalite 4 ve üzeri haritalara gidicez.')
         .setStyle(TextInputStyle.Paragraph)
         .setRequired(false);
 
     modal.addComponents(
         new ActionRowBuilder().addComponents(headerInput),
+        new ActionRowBuilder().addComponents(contentInput),
         new ActionRowBuilder().addComponents(rolesInput),
         new ActionRowBuilder().addComponents(descriptionInput)
     );
