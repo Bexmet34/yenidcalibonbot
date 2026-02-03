@@ -12,7 +12,7 @@ const { handlePartyButtons } = require('./handlers/buttonHandler');
 const { handlePartiModal } = require('./handlers/modalHandler');
 const { handleInteractionError } = require('./utils/interactionUtils');
 
-const { handleCreateGiveaway, handleJoinGiveaway, checkGiveaways, handleEndCommand, handleRerollCommand } = require('./handlers/giveawayHandler');
+const { handleCreateGiveaway, handleJoinGiveaway, checkGiveaways, handleEndCommand, handleRerollCommand, handleListParticipants, handleGiveawayModalSubmit } = require('./handlers/giveawayHandler');
 
 // Create Discord client
 const client = new Client({
@@ -123,6 +123,7 @@ client.on('interactionCreate', async interaction => {
                 if (sub === 'baslat') await handleCreateGiveaway(interaction);
                 else if (sub === 'bitir') await handleEndCommand(interaction);
                 else if (sub === 'yenile') await handleRerollCommand(interaction);
+                else if (sub === 'katilimcilar') await handleListParticipants(interaction);
             } else if (interaction.commandName === 'me') {
                 await handleMeCommand(interaction);
             }
@@ -137,7 +138,11 @@ client.on('interactionCreate', async interaction => {
         }
         // Handle modal submissions
         else if (interaction.isModalSubmit()) {
-            await handlePartiModal(interaction);
+            if (interaction.customId === 'giveaway_modal') {
+                await handleGiveawayModalSubmit(interaction);
+            } else {
+                await handlePartiModal(interaction);
+            }
         }
     } catch (error) {
         await handleInteractionError(interaction, error);

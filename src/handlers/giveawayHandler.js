@@ -7,6 +7,9 @@ const { parseDuration } = require('../utils/timeUtils');
 const DATA_FILE = path.join(__dirname, '../data/giveaways.json');
 const DATA_DIR = path.dirname(DATA_FILE);
 
+// Geçici önbellek (Resim gibi verileri komut -> modal arası taşımak için)
+const giveawayCache = new Map();
+
 // Helper: Read Data
 function getGiveaways() {
     if (!fs.existsSync(DATA_DIR)) {
@@ -34,80 +37,16 @@ function saveGiveaways(data) {
  * Başlatılan çekilişi oluşturur
  */
 async function handleCreateGiveaway(interaction) {
-    console.log('[Giveaway] Create command started by:', interaction.user.tag);
-    const prize = interaction.options.getString('odul');
-    const durationStr = interaction.options.getString('sure');
-    const winnerCount = interaction.options.getInteger('kazanan') || 1;
+    // Resim varsa önbelleğe al
     const imageAttachment = interaction.options.getAttachment('resim');
-
-    const durationMs = parseDuration(durationStr);
-    if (!durationMs) {
-        return interaction.reply({ content: '❌ Geçersiz süre formatı! Örnekler: 10dk, 2sa, 1g', flags: MessageFlags.Ephemeral });
-    }
-
-    const endTime = Date.now() + durationMs;
-    const endTimestamp = Math.round(endTime / 1000); // Discord format
-
-    // Embed Oluştur
-    const embed = new EmbedBuilder()
-        .setTitle('🎉 ÖZEL ÇEKİLİŞ BAŞLADI! 🎉')
-        .setDescription(`
-**Ödül:** \`${prize}\`
-
-Aşağıdaki butona tıklayarak çekilişe katılabilirsin!
-Bol şans savaşçı! ⚔️
-
-**Bitiş Tarihi:**
-⏳ <t:${endTimestamp}:R> (<t:${endTimestamp}:f>)
-
-**Detaylar:**
-🏆 **Kazanan Sayısı:** ${winnerCount} Kişi
-👑 **Düzenleyen:** ${interaction.user}
-👥 **Katılımcı:** 0 Kişi
-        `)
-        .setColor('#FFAF00') // Albion Gold
-        .setThumbnail('https://render.albiononline.com/v1/item/TREASURECHEST_KEY_T8_0.png') // T8 Chest Key (temsili)
-        .setFooter({ text: 'Albion Çekiliş Sistemi', iconURL: interaction.guild.iconURL() })
-        .setTimestamp(endTime);
-
     if (imageAttachment) {
-        embed.setImage(imageAttachment.url);
-    }
-
-    // Buton Oluştur
-    const button = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-            .setCustomId('giveaway_join')
-            .setLabel('🎉 Çekilişe Katıl (0)')
-            .setStyle(ButtonStyle.Success)
-    );
-
-    const message = await interaction.channel.send({ embeds: [embed], components: [button] });
-    console.log('[Giveaway] Message sent, ID:', message.id);
-
-    try {
-        // Veritabanına Kayıt
-        const giveaways = getGiveaways();
-        console.log('[Giveaway] DB read success. Current count:', giveaways.length);
-        giveaways.push({
-            messageId: message.id,
-            channelId: message.channel.id,
-            guildId: message.guild.id,
-            prize: prize,
-            endTime: endTime,
-            winnerCount: winnerCount,
-            participants: [],
-            hostId: interaction.user.id,
-            ended: false
+        giveawayCache.set(interaction.user.id, {
+            attachmentUrl: imageAttachment.url,
+            expiry: Date.now() + (5 * 60 * 1000) // 5 dakika geçerli
         });
-        saveGiveaways(giveaways);
-        console.log('[Giveaway] DB save success.');
-    } catch (dbErr) {
-        console.error('[Giveaway] DB Error:', dbErr);
-        // Reply anyway so user knows message was sent but tracking might fail
     }
 
-    await interaction.reply({ content: `✅ Çekiliş başarıyla oluşturuldu!`, flags: MessageFlags.Ephemeral });
+    await handleGiveawayBaslatCommand(interaction);
 }
 
 /**
@@ -118,32 +57,63 @@ async function handleJoinGiveaway(interaction) {
     const giveawayIndex = giveaways.findIndex(g => g.messageId === interaction.message.id);
 
     if (giveawayIndex === -1) {
-        return interaction.reply({ content: '❌ Bu çekiliş bulunamadı veya silinmiş.', flags: MessageFlags.Ephemeral });
+        return interaction.reply({ content: '❌ Bu çekiliş bulunamadı.', flags: MessageFlags.Ephemeral });
     }
 
     const giveaway = giveaways[giveawayIndex];
-
     if (giveaway.ended) {
         return interaction.reply({ content: '⚠️ Bu çekiliş sona erdi!', flags: MessageFlags.Ephemeral });
     }
 
-    if (giveaway.participants.includes(interaction.user.id)) {
-        // Çıkış yapma mantığı (Toggle)
-        giveaway.participants = giveaway.participants.filter(id => id !== interaction.user.id);
-        saveGiveaways(giveaways);
+    const member = interaction.member;
+    const user = interaction.user;
 
-        // Butonu güncelle
+    // 1. Required Role
+    if (giveaway.requiredRoleId && !member.roles.cache.has(giveaway.requiredRoleId)) {
+        return interaction.reply({ content: `❌ Bu çekilişe katılmak için <@&${giveaway.requiredRoleId}> rolüne sahip olmalısın!`, flags: MessageFlags.Ephemeral });
+    }
+
+    // 2. Banned Role
+    if (giveaway.bannedRoleId && member.roles.cache.has(giveaway.bannedRoleId)) {
+        return interaction.reply({ content: `🚫 <@&${giveaway.bannedRoleId}> rolüne sahip olduğunuz için katılamazsınız.`, flags: MessageFlags.Ephemeral });
+    }
+
+    // 3. Server Age
+    if (giveaway.dayLimit) {
+        const daysInServer = (Date.now() - member.joinedTimestamp) / (1000 * 60 * 60 * 24);
+        if (daysInServer < giveaway.dayLimit) {
+            return interaction.reply({ content: `⏳ Sunucuda en az **${giveaway.dayLimit} gün** bulunmalısın. (Süre: ${Math.floor(daysInServer)} gün)`, flags: MessageFlags.Ephemeral });
+        }
+    }
+
+    // 4. Account Age
+    if (giveaway.accountAgeLimit) {
+        const accountDays = (Date.now() - user.createdTimestamp) / (1000 * 60 * 60 * 24);
+        if (accountDays < giveaway.accountAgeLimit) {
+            return interaction.reply({ content: `🤖 Hesabın en az **${giveaway.accountAgeLimit} günlük** olmalı. (Senin: ${Math.floor(accountDays)} gün)`, flags: MessageFlags.Ephemeral });
+        }
+    }
+
+    if (giveaway.participants.includes(user.id)) {
+        giveaway.participants = giveaway.participants.filter(id => id !== user.id);
+        saveGiveaways(giveaways);
         updateGiveawayMessage(interaction, giveaway);
         return interaction.reply({ content: '📤 Çekilişten ayrıldın.', flags: MessageFlags.Ephemeral });
     }
 
-    // Katılma
-    giveaway.participants.push(interaction.user.id);
+    giveaway.participants.push(user.id);
     saveGiveaways(giveaways);
-
-    // Butonu güncelle
     updateGiveawayMessage(interaction, giveaway);
-    await interaction.reply({ content: '✅ Çekilişe katıldın! Bol şans.', flags: MessageFlags.Ephemeral });
+
+    // Calculate Chance
+    const total = giveaway.participants.length;
+    const winCount = giveaway.winnerCount || 1;
+    const chance = Math.min(100, (winCount / total) * 100).toFixed(1);
+
+    await interaction.reply({
+        content: `✅ Çekilişe katıldın! Bol şans.\n📊 **Tahmini Kazanma Şansın:** %${chance}`,
+        flags: MessageFlags.Ephemeral
+    });
 }
 
 /**
@@ -304,10 +274,199 @@ async function handleRerollCommand(interaction) {
 }
 
 
+/**
+ * Katılımcıları listeler
+ */
+async function handleListParticipants(interaction) {
+    const messageId = interaction.options.getString('mesaj_id');
+    const giveaways = getGiveaways();
+
+    let giveaway;
+    if (messageId) {
+        giveaway = giveaways.find(g => g.messageId === messageId);
+    } else {
+        // Kanaldaki en son çekilişi bul (aktif veya bitmiş)
+        giveaway = giveaways.filter(g => g.channelId === interaction.channelId).pop();
+    }
+
+    if (!giveaway) {
+        return interaction.reply({ content: '❌ Uygun bir çekiliş bulunamadı.', flags: MessageFlags.Ephemeral });
+    }
+
+    if (giveaway.participants.length === 0) {
+        return interaction.reply({ content: '👥 Henüz kimse katılmamış.', flags: MessageFlags.Ephemeral });
+    }
+
+    const participantMentions = giveaway.participants.map(id => `<@${id}>`).join(', ');
+    const embed = new EmbedBuilder()
+        .setTitle('🔍 Katılımcı Önizleme')
+        .setDescription(`
+**Ödül:** \`${giveaway.prize}\`
+**Toplam Katılımcı:** ${giveaway.participants.length}
+
+**Katılanlar:**
+${participantMentions.length > 2000 ? participantMentions.substring(0, 1990) + '...' : participantMentions}
+        `)
+        .setColor('#3498DB');
+
+    await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+}
+
+/**
+ * Çekiliş kurulum modalını açar
+ */
+async function handleGiveawayBaslatCommand(interaction) {
+    const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
+
+    const modal = new ModalBuilder()
+        .setCustomId('giveaway_modal')
+        .setTitle('🎉 Çekiliş Kurulumu');
+
+    const prizeInput = new TextInputBuilder()
+        .setCustomId('giveaway_prize')
+        .setLabel('Hangi Ödül Verilecek?')
+        .setPlaceholder('Örn: 1.000.000 Gümüş / T8 Ödül Paketi')
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true);
+
+    const durationInput = new TextInputBuilder()
+        .setCustomId('giveaway_duration')
+        .setLabel('Ne Kadar Sürecek?')
+        .setPlaceholder('Örn: 10dk, 2sa, 1g, 1h')
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true);
+
+    const winnersInput = new TextInputBuilder()
+        .setCustomId('giveaway_winners')
+        .setLabel('Kaç Kazanan Olacak?')
+        .setPlaceholder('Varsayılan: 1')
+        .setStyle(TextInputStyle.Short)
+        .setRequired(false);
+
+    const serverAgeInput = new TextInputBuilder()
+        .setCustomId('giveaway_server_age')
+        .setLabel('Sunucu Yaş Sınırı (Gün)')
+        .setPlaceholder('Örn: 7 (Gerekmiyorsa boş bırakın)')
+        .setStyle(TextInputStyle.Short)
+        .setRequired(false);
+
+    const accountAgeInput = new TextInputBuilder()
+        .setCustomId('giveaway_account_age')
+        .setLabel('Hesap Yaş Sınırı (Gün)')
+        .setPlaceholder('Örn: 30 (Gerekmiyorsa boş bırakın)')
+        .setStyle(TextInputStyle.Short)
+        .setRequired(false);
+
+    modal.addComponents(
+        new ActionRowBuilder().addComponents(prizeInput),
+        new ActionRowBuilder().addComponents(durationInput),
+        new ActionRowBuilder().addComponents(winnersInput),
+        new ActionRowBuilder().addComponents(serverAgeInput),
+        new ActionRowBuilder().addComponents(accountAgeInput)
+    );
+
+    await interaction.showModal(modal);
+}
+
+/**
+ * Modal formundan gelen verilerle çekilişi başlatır
+ */
+async function handleGiveawayModalSubmit(interaction) {
+    console.log('[Giveaway] Modal submission received from:', interaction.user.tag);
+    const prize = interaction.fields.getTextInputValue('giveaway_prize');
+    const durationStr = interaction.fields.getTextInputValue('giveaway_duration');
+    const winnerCount = parseInt(interaction.fields.getTextInputValue('giveaway_winners')) || 1;
+    const dayLimit = parseInt(interaction.fields.getTextInputValue('giveaway_server_age')) || 0;
+    const accountAgeLimit = parseInt(interaction.fields.getTextInputValue('giveaway_account_age')) || 0;
+
+    // Önbellekten resmi kontrol et (Sadece yüklenen resmi kullan)
+    const cachedData = giveawayCache.get(interaction.user.id);
+    const imageUrl = cachedData?.attachmentUrl;
+
+    // Önbelleği temizle
+    if (cachedData) giveawayCache.delete(interaction.user.id);
+
+    const durationMs = parseDuration(durationStr);
+    if (!durationMs) {
+        return interaction.reply({ content: '❌ Geçersiz süre formatı! Örnekler: 10dk, 2sa, 1g', flags: MessageFlags.Ephemeral });
+    }
+
+    const endTime = Date.now() + durationMs;
+    const endTimestamp = Math.round(endTime / 1000);
+
+    // Şartlar metni
+    let requirementsText = '';
+    if (dayLimit > 0) requirementsText += `\n⏳ **Sunucu Yaşı:** En az ${dayLimit} gün`;
+    if (accountAgeLimit > 0) requirementsText += `\n🤖 **Hesap Yaşı:** En az ${accountAgeLimit} gün`;
+    if (!requirementsText) requirementsText = '\n⭐ **Katılım:** Herkese açık';
+
+    const embed = new EmbedBuilder()
+        .setTitle('🎁 ÖZEL ÇEKİLİŞ BAŞLADI! 🎁')
+        .setDescription(`
+**Ödül:** \` ${prize} \`
+
+> Aşağıdaki butona tıklayarak çekilişe katılabilirsin!
+> Katılmak için aşağıdaki şartları sağlıyor olmalısın.
+
+**📋 KATILIM ŞARTLARI:**${requirementsText}
+
+**📅 BİTİŞ ZAMANI:**
+⏳ <t:${endTimestamp}:R> (<t:${endTimestamp}:f>)
+
+**📊 İSTATİSTİKLER:**
+🏆 **Kazanan:** ${winnerCount} Kişi
+👑 **Host:** ${interaction.user}
+👥 **Katılımcı:** 0 Kişi
+        `)
+        .setColor('#FFD700')
+        .setThumbnail('https://render.albiononline.com/v1/item/TREASURECHEST_KEY_T8_0.png')
+        .setFooter({ text: '🛡️ Turquoise Çekiliş Sistemi', iconURL: interaction.guild.iconURL() })
+        .setTimestamp(endTime);
+
+    if (imageUrl && imageUrl.startsWith('http')) {
+        embed.setImage(imageUrl);
+    }
+
+    const button = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+            .setCustomId('giveaway_join')
+            .setLabel('🎉 Çekilişe Katıl (0)')
+            .setStyle(ButtonStyle.Success)
+    );
+
+    const message = await interaction.channel.send({ embeds: [embed], components: [button] });
+
+    try {
+        const giveaways = getGiveaways();
+        giveaways.push({
+            messageId: message.id,
+            channelId: message.channel.id,
+            guildId: message.guild.id,
+            prize: prize,
+            endTime: endTime,
+            winnerCount: winnerCount,
+            participants: [],
+            hostId: interaction.user.id,
+            ended: false,
+            dayLimit: dayLimit > 0 ? dayLimit : null,
+            accountAgeLimit: accountAgeLimit > 0 ? accountAgeLimit : null,
+            imageUrl: imageUrl || null
+        });
+        saveGiveaways(giveaways);
+    } catch (dbErr) {
+        console.error('[Giveaway] DB Error:', dbErr);
+    }
+
+    await interaction.reply({ content: `✅ Çekiliş başarıyla oluşturuldu!`, flags: MessageFlags.Ephemeral });
+}
+
 module.exports = {
     handleCreateGiveaway,
     handleJoinGiveaway,
     checkGiveaways,
     handleEndCommand,
-    handleRerollCommand
+    handleRerollCommand,
+    handleListParticipants,
+    handleGiveawayBaslatCommand,
+    handleGiveawayModalSubmit
 };
