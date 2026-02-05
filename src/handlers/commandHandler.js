@@ -169,47 +169,6 @@ async function handleUyelerCommand(interaction) {
     }
 }
 
-/**
- * Handles /kayitsistemi command
- */
-async function handleKayitSistemiCommand(interaction) {
-    // Whitelist check
-    if (!config.WHITELIST_USERS.includes(interaction.user.id)) {
-        return await interaction.reply({
-            content: '❌ **Bu komutu kullanmak için yetkiniz bulunmuyor!**',
-            flags: [MessageFlags.Ephemeral]
-        });
-    }
-
-    const role = interaction.options.getRole('rol');
-    const channel = interaction.options.getChannel('kanal');
-
-    await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
-
-    try {
-        const embed = new EmbedBuilder()
-            .setTitle('🛡️ Turquoise Lonca Kayıt Sistemi')
-            .setDescription('Loncaya kayıt olmak ve yetkilerinizi almak için aşağıdaki butona tıklayın.\n\n**Not:** Kayıt sırasında Albion oyun içi adınızı tam olarak girmeniz gerekmektedir.')
-            .setColor('#3498DB');
-
-        const row = new ActionRowBuilder().addComponents(
-            new ButtonBuilder()
-                .setCustomId(`setup_register_${role.id}`)
-                .setLabel('Kayıt Ol')
-                .setStyle(ButtonStyle.Primary)
-                .setEmoji('📝')
-        );
-
-        await channel.send({ embeds: [embed], components: [row] });
-
-        return await interaction.editReply({
-            content: `✅ Kayıt sistemi başarıyla kuruldu!\n📍 Kanal: ${channel}\n🛡️ Rol: ${role}`
-        });
-    } catch (error) {
-        console.error('[KayitSistemi] Hata:', error);
-        return await interaction.editReply({ content: '❌ Kayıt sistemi kurulurken bir hata oluştu.' });
-    }
-}
 
 /**
  * Handles /me command
@@ -293,7 +252,6 @@ module.exports = {
     handlePveCommand,
     handlePartikapatCommand,
     handleUyelerCommand,
-    handleKayitSistemiCommand,
     handleMeCommand,
     createMemberPageEmbed
 };

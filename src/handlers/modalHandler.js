@@ -38,49 +38,7 @@ async function handlePartiModal(interaction) {
         }
     }
 
-    // Handles registration modal
-    if (interaction.customId.startsWith('modal_register_')) {
-        const roleId = interaction.customId.split('_')[2];
-        const ign = interaction.fields.getTextInputValue('register_ign');
-        const realName = interaction.fields.getTextInputValue('register_realname');
 
-        await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
-
-        try {
-            const guildId = 'qw4DHcDZSz-LOvHAQlsOGw';
-            const members = await getEuropeGuildMembers(guildId);
-
-            // Check if IGN exists in guild members (Case-sensitive as requested)
-            const isMember = members.some(m => m.Name === ign);
-
-            if (isMember) {
-                const role = interaction.guild.roles.cache.get(roleId);
-                if (role) {
-                    await interaction.member.roles.add(role);
-
-                    // Optional: Change nickname to [IGN] RealName
-                    try {
-                        await interaction.member.setNickname(`${ign} (${realName})`);
-                    } catch (e) {
-                        console.log('Yetki yetersizliği nedeniyle takma ad değiştirilemedi.');
-                    }
-
-                    return await interaction.editReply({
-                        content: `✅ **Kayıt Başarılı!**\n\nHoş geldin **${ign}**! Loncada olduğun teyit edildi ve <@&${roleId}> rolün verildi.`
-                    });
-                } else {
-                    return await interaction.editReply({ content: '❌ Kayıt rolü sunucuda bulunamadı. Lütfen yetkililere bildirin.' });
-                }
-            } else {
-                return await interaction.editReply({
-                    content: `❌ **Kayıt Reddedildi!**\n\n**${ign}** ismiyle bir oyuncu loncamızda bulunamadı. Lütfen isminizi büyük-küçük harf dikkat ederek tekrar girin veya önce loncaya katılın.`
-                });
-            }
-        } catch (error) {
-            console.error('[Registration] Error:', error);
-            return await interaction.editReply({ content: '❌ Kayıt işlemi sırasında bir hata oluştu.' });
-        }
-    }
 }
 
 module.exports = {

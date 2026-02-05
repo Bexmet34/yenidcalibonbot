@@ -43,34 +43,6 @@ async function handlePartyButtons(interaction) {
         return await interaction.update({ embeds: [closedEmbed], components: [closedRow] });
     }
 
-    if (customId.startsWith('setup_register_')) {
-        const roleId = customId.split('_')[2];
-
-        const modal = new ModalBuilder()
-            .setCustomId(`modal_register_${roleId}`)
-            .setTitle('🛡️ Lonca Kayıt Formu');
-
-        const nameInput = new TextInputBuilder()
-            .setCustomId('register_ign')
-            .setLabel('Oyun İçi İsminiz (IGN)')
-            .setPlaceholder('Örn: MrCrusher')
-            .setStyle(TextInputStyle.Short)
-            .setRequired(true);
-
-        const realNameInput = new TextInputBuilder()
-            .setCustomId('register_realname')
-            .setLabel('Gerçek İsminiz')
-            .setPlaceholder('Örn: Ahmet')
-            .setStyle(TextInputStyle.Short)
-            .setRequired(true);
-
-        modal.addComponents(
-            new ActionRowBuilder().addComponents(nameInput),
-            new ActionRowBuilder().addComponents(realNameInput)
-        );
-
-        return await interaction.showModal(modal);
-    }
 
     if (customId.startsWith('members_')) {
         const parts = customId.split('_');

@@ -32,17 +32,7 @@ const commands = [
     new SlashCommandBuilder()
         .setName('uyeler')
         .setDescription('Avrupa sunucusu lonca üyelerini listeler.'),
-    new SlashCommandBuilder()
-        .setName('kayitsistemi')
-        .setDescription('Loncaya özel kayıt sistemini kurar.')
-        .addRoleOption(option =>
-            option.setName('rol')
-                .setDescription('Kayıt sonrası verilecek rol')
-                .setRequired(true))
-        .addChannelOption(option =>
-            option.setName('kanal')
-                .setDescription('Kayıt butonunun gönderileceği kanal')
-                .setRequired(true)),
+
     new SlashCommandBuilder()
         .setName('cekilis')
         .setDescription('Çekiliş işlemlerini yönetir. ')

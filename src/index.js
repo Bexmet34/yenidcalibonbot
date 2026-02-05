@@ -6,7 +6,7 @@ const config = require('./config/config');
 const fs = require('fs');
 const path = require('path');
 const { registerCommands } = require('./services/commandRegistration');
-const { handleYardimCommand, handlePveCommand, handlePartikapatCommand, handleUyelerCommand, handleKayitSistemiCommand, handleMeCommand } = require('./handlers/commandHandler');
+const { handleYardimCommand, handlePveCommand, handlePartikapatCommand, handleUyelerCommand, handleMeCommand } = require('./handlers/commandHandler');
 const { handlePartikurCommand } = require('./handlers/partikurHandler');
 const { handlePartyButtons } = require('./handlers/buttonHandler');
 const { handlePartiModal } = require('./handlers/modalHandler');
@@ -116,8 +116,7 @@ client.on('interactionCreate', async interaction => {
                 await handlePartikapatCommand(interaction);
             } else if (interaction.commandName === 'uyeler') {
                 await handleUyelerCommand(interaction);
-            } else if (interaction.commandName === 'kayitsistemi') {
-                await handleKayitSistemiCommand(interaction);
+
             } else if (interaction.commandName === 'cekilis') {
                 const sub = interaction.options.getSubcommand();
                 if (sub === 'baslat') await handleCreateGiveaway(interaction);
@@ -149,7 +148,6 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// Voice state handler removed per user request
 
 // Start the bot
 startBot();
