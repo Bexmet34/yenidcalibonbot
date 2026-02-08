@@ -6,7 +6,7 @@ const config = require('./config/config');
 const fs = require('fs');
 const path = require('path');
 const { registerCommands } = require('./services/commandRegistration');
-const { handleYardimCommand, handlePveCommand, handlePartikapatCommand, handleUyelerCommand, handleMeCommand } = require('./handlers/commandHandler');
+const { handleYardimCommand, handlePveCommand, handlePartikapatCommand, handleUyelerCommand, handleMeCommand, handleWladdCommand, handleWlremoveCommand } = require('./handlers/commandHandler');
 const { handlePartikurCommand } = require('./handlers/partikurHandler');
 const { handlePartyButtons } = require('./handlers/buttonHandler');
 const { handlePartiModal } = require('./handlers/modalHandler');
@@ -125,6 +125,10 @@ client.on('interactionCreate', async interaction => {
                 else if (sub === 'katilimcilar') await handleListParticipants(interaction);
             } else if (interaction.commandName === 'me') {
                 await handleMeCommand(interaction);
+            } else if (interaction.commandName === 'wladd') {
+                await handleWladdCommand(interaction);
+            } else if (interaction.commandName === 'wlremove') {
+                await handleWlremoveCommand(interaction);
             }
         }
         // Handle button interactions

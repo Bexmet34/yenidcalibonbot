@@ -4,7 +4,8 @@ const config = require('../config/config');
 const { createHelpEmbed } = require('../builders/embedBuilder');
 const { buildPvePayload } = require('../builders/payloadBuilder');
 const { safeReply } = require('../utils/interactionUtils');
-const { hasActiveParty, setActiveParty, getActiveParty, removeActiveParty } = require('../services/partyManager');
+const { hasActiveParty, setActiveParty, getActiveParties, removeActiveParty, getActivePartyCount } = require('../services/partyManager');
+const { addToWhitelist, removeFromWhitelist, isWhitelisted } = require('../services/whitelistManager');
 const { createClosedButton } = require('../builders/componentBuilder');
 const { getEuropeGuildMembers, searchPlayer, getPlayerStats } = require('../services/albionApiService');
 
@@ -21,10 +22,17 @@ async function handleYardimCommand(interaction) {
  */
 async function handlePveCommand(interaction) {
     const userId = interaction.user.id;
+    const whitelisted = isWhitelisted(userId);
+    const partyCount = getActivePartyCount(userId);
+    const limit = whitelisted ? 3 : 1;
 
-    if (hasActiveParty(userId)) {
+    if (partyCount >= limit) {
+        let errorMsg = whitelisted
+            ? `❌ **Limitinize ulaştınız!**\n\nWhite list üyesi olarak en fazla **3** aktif parti açabilirsiniz. Yeni bir parti açmadan önce mevcut partilerinizden birini kapatmalısınız.`
+            : `❌ **Zaten aktif bir partiniz var!**\n\nYeni bir parti açmadan önce mevcut partinizi kapatmalısınız. Kapatmak için:\n1️⃣ Mevcut partideki **"Partiyi Kapat"** butonuna basabilir,\n2️⃣ Veya \`/partikapat\` komutunu kullanabilirsiniz.`;
+
         return await safeReply(interaction, {
-            content: '❌ **Zaten aktif bir partiniz var!**\n\nYeni bir parti açmadan önce mevcut partinizi kapatmalısınız. Kapatmak için:\n1️⃣ Mevcut partideki **"Partiyi Kapat"** butonuna basabilir,\n2️⃣ Veya `/partikapat` komutunu kullanabilirsiniz.',
+            content: errorMsg,
             flags: [MessageFlags.Ephemeral]
         });
     }
@@ -59,9 +67,9 @@ async function handlePartikapatCommand(interaction) {
     console.log(`[CommandHandler] /partikapat triggered by ${interaction.user.tag}`);
 
     try {
-        const partyInfo = getActiveParty(userId);
+        const parties = getActiveParties(userId);
 
-        if (!partyInfo) {
+        if (!parties || parties.length === 0) {
             return await safeReply(interaction, {
                 content: '❌ **Aktif bir partiniz bulunmuyor.**',
                 flags: [MessageFlags.Ephemeral]
@@ -70,48 +78,89 @@ async function handlePartikapatCommand(interaction) {
 
         await interaction.deferReply({ flags: [MessageFlags.Ephemeral] }).catch(() => { });
 
-        const messageId = typeof partyInfo === 'object' ? partyInfo.messageId : partyInfo;
-        const channelId = typeof partyInfo === 'object' ? partyInfo.channelId : null;
+        let totalClosed = 0;
+        for (const partyInfo of parties) {
+            const messageId = partyInfo.messageId;
+            const channelId = partyInfo.channelId;
 
-        let closedVisually = false;
+            if (channelId && messageId) {
+                try {
+                    const channel = await interaction.client.channels.fetch(channelId);
+                    const message = await channel?.messages.fetch(messageId);
 
-        if (channelId && messageId) {
-            try {
-                const channel = await interaction.client.channels.fetch(channelId);
-                const message = await channel?.messages.fetch(messageId);
+                    if (message && message.embeds[0]) {
+                        const oldEmbed = message.embeds[0];
+                        const newFields = oldEmbed.fields.filter(f => !f.name.includes('📌') && !f.name.includes('KURALLAR'));
+                        const closedEmbed = EmbedBuilder.from(oldEmbed)
+                            .setTitle(`${oldEmbed.title} [KAPALI]`)
+                            .setColor('#808080')
+                            .setFields(newFields)
+                            .setFooter(null)
+                            .setTimestamp(null);
 
-                if (message && message.embeds[0]) {
-                    const oldEmbed = message.embeds[0];
-                    const newFields = oldEmbed.fields.filter(f => !f.name.includes('📌') && !f.name.includes('KURALLAR'));
-                    const closedEmbed = EmbedBuilder.from(oldEmbed)
-                        .setTitle(`${oldEmbed.title} [KAPALI]`)
-                        .setColor('#808080')
-                        .setFields(newFields)
-                        .setFooter(null)
-                        .setTimestamp(null);
-
-                    const closedRow = createClosedButton();
-                    await message.edit({ embeds: [closedEmbed], components: [closedRow] });
-                    closedVisually = true;
+                        const closedRow = createClosedButton();
+                        await message.edit({ embeds: [closedEmbed], components: [closedRow] });
+                        totalClosed++;
+                    }
+                } catch (err) {
+                    console.log(`[CommandHandler] Visual close failed for ${messageId}: ${err.message}`);
                 }
-            } catch (err) {
-                console.log(`[CommandHandler] Visual close failed (Message might be deleted): ${err.message}`);
             }
+            // Clear each one from DB
+            removeActiveParty(userId, messageId);
         }
 
-        // ALWAYS CLEAR DB
-        removeActiveParty(userId);
-
-        const responseContent = closedVisually
-            ? '✅ **Aktif partiniz başarıyla kapatıldı.**'
-            : '✅ **Aktif partiniz sistemden temizlendi.** (Not: Mesaj güncellenemedi ama kilit kaldırıldı.)';
+        const responseContent = totalClosed > 0
+            ? `✅ **Toplam ${totalClosed} aktif partiniz başarıyla kapatıldı.**`
+            : '✅ **Aktif partileriniz sistemden temizlendi.**';
 
         await interaction.editReply({ content: responseContent }).catch(() => { });
 
     } catch (error) {
         console.error('[CommandHandler] Critical Error:', error);
-        removeActiveParty(userId);
-        await interaction.followUp({ content: '❌ Bir hata oluştu ama kilidiniz temizlendi.', flags: [MessageFlags.Ephemeral] }).catch(() => { });
+        // Fallback: try to clear all for this user
+        const parties = getActiveParties(userId);
+        parties.forEach(p => removeActiveParty(userId, p.messageId));
+
+        await interaction.followUp({ content: '❌ Bir hata oluştu ama kilitleriniz temizlendi.', flags: [MessageFlags.Ephemeral] }).catch(() => { });
+    }
+}
+
+/**
+ * Handles /wladd command
+ */
+async function handleWladdCommand(interaction) {
+    const targetUser = interaction.options.getUser('kullanici');
+
+    if (addToWhitelist(targetUser.id)) {
+        return await safeReply(interaction, {
+            content: `✅ **${targetUser.tag}** başarıyla beyaz listeye eklendi. Artık aynı anda **3** parti kurabilir.`,
+            flags: [MessageFlags.Ephemeral]
+        });
+    } else {
+        return await safeReply(interaction, {
+            content: `❌ **${targetUser.tag}** zaten beyaz listede bulunuyor.`,
+            flags: [MessageFlags.Ephemeral]
+        });
+    }
+}
+
+/**
+ * Handles /wlremove command
+ */
+async function handleWlremoveCommand(interaction) {
+    const targetUser = interaction.options.getUser('kullanici');
+
+    if (removeFromWhitelist(targetUser.id)) {
+        return await safeReply(interaction, {
+            content: `✅ **${targetUser.tag}** başarıyla beyaz listeden çıkarıldı. Artık sadece **1** parti kurabilir.`,
+            flags: [MessageFlags.Ephemeral]
+        });
+    } else {
+        return await safeReply(interaction, {
+            content: `❌ **${targetUser.tag}** beyaz listede bulunamadı.`,
+            flags: [MessageFlags.Ephemeral]
+        });
     }
 }
 
@@ -253,5 +302,7 @@ module.exports = {
     handlePartikapatCommand,
     handleUyelerCommand,
     handleMeCommand,
+    handleWladdCommand,
+    handleWlremoveCommand,
     createMemberPageEmbed
 };

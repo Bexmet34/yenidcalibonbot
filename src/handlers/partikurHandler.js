@@ -1,14 +1,23 @@
 const { MessageFlags, ActionRowBuilder, TextInputBuilder, TextInputStyle, ModalBuilder } = require('discord.js');
-const { hasActiveParty } = require('../services/partyManager');
-
+const { getActivePartyCount } = require('../services/partyManager');
+const { isWhitelisted } = require('../services/whitelistManager');
 /**
  * Handles /partikur command
  * Shows modal directly without duration selection
  */
 async function handlePartikurCommand(interaction) {
-    if (hasActiveParty(interaction.user.id)) {
+    const userId = interaction.user.id;
+    const whitelisted = isWhitelisted(userId);
+    const partyCount = getActivePartyCount(userId);
+    const limit = whitelisted ? 3 : 1;
+
+    if (partyCount >= limit) {
+        let errorMsg = whitelisted
+            ? `❌ **Limitinize ulaştınız!**\n\nWhite list üyesi olarak en fazla **3** aktif parti açabilirsiniz. Yeni bir parti açmadan önce mevcut partilerinizden birini kapatmalısınız.`
+            : `❌ **Zaten aktif bir partiniz var!**\n\nYeni bir parti açmadan önce mevcut partinizi kapatmalısınız. Kapatmak için:\n1️⃣ Mevcut partideki **"Partiyi Kapat"** butonuna basabilir,\n2️⃣ Veya \`/partikapat\` komutunu kullanabilirsiniz.`;
+
         return await interaction.reply({
-            content: '❌ **Zaten aktif bir partiniz var!**\n\nYeni bir parti açmadan önce mevcut partinizi kapatmalısınız. Kapatmak için:\n1️⃣ Mevcut partideki **"Partiyi Kapat"** butonuna basabilir,\n2️⃣ Veya `/partikapat` komutunu kullanabilirsiniz.',
+            content: errorMsg,
             flags: [MessageFlags.Ephemeral]
         });
     }

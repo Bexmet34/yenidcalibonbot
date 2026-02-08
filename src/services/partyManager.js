@@ -42,15 +42,32 @@ function writeData(data) {
  */
 function hasActiveParty(userId) {
     const data = readData();
-    return !!data[userId];
+    const entry = data[userId];
+    if (!entry) return false;
+    if (Array.isArray(entry)) return entry.length > 0;
+    return true; // legacy object
 }
 
 /**
- * Get user's active party info { messageId, channelId }
+ * Get active party count for a user
  */
-function getActiveParty(userId) {
+function getActivePartyCount(userId) {
     const data = readData();
-    return data[userId];
+    const entry = data[userId];
+    if (!entry) return 0;
+    if (Array.isArray(entry)) return entry.length;
+    return 1; // legacy object
+}
+
+/**
+ * Get user's active parties info [{ messageId, channelId }]
+ */
+function getActiveParties(userId) {
+    const data = readData();
+    const entry = data[userId];
+    if (!entry) return [];
+    if (Array.isArray(entry)) return entry;
+    return [entry]; // legacy object to array
 }
 
 /**
@@ -58,7 +75,17 @@ function getActiveParty(userId) {
  */
 function setActiveParty(userId, messageId, channelId) {
     const data = readData();
-    data[userId] = { messageId, channelId };
+    const newParty = { messageId, channelId };
+
+    if (!data[userId]) {
+        data[userId] = [newParty];
+    } else if (Array.isArray(data[userId])) {
+        data[userId].push(newParty);
+    } else {
+        // Migration from legacy single object to array
+        data[userId] = [data[userId], newParty];
+    }
+
     writeData(data);
     console.log(`[PartyManager] Database Updated: User ${userId} -> Party ${messageId} in ${channelId}`);
 }
@@ -68,29 +95,50 @@ function setActiveParty(userId, messageId, channelId) {
  */
 function removeActiveParty(userId, messageId = null) {
     const data = readData();
+    const entry = data[userId];
 
-    if (data[userId]) {
-        const stored = data[userId];
-        const storedId = typeof stored === 'object' ? stored.messageId : stored;
+    if (!entry) {
+        console.log(`[PartyManager] User ${userId} requested to close a party but no active party found in Database.`);
+        return false;
+    }
 
-        // Log mismatch for debugging but proceed anyway
-        if (messageId && storedId !== messageId) {
-            console.log(`[PartyManager] Note: Closing party ${messageId} while DB tracked ${storedId}. Clearing status.`);
-        }
-
+    // If no specific messageId, clear EVERYTHING for this user
+    if (!messageId) {
         delete data[userId];
         writeData(data);
-        console.log(`[PartyManager] ✅ Database Updated: User ${userId} status cleared.`);
+        console.log(`[PartyManager] ✅ Database Updated: User ${userId} all status cleared.`);
         return true;
     }
 
-    console.log(`[PartyManager] User ${userId} requested to close a party but no active party found in Database.`);
-    return false;
+    if (!Array.isArray(entry)) {
+        // Legacy single object handling
+        const storedId = typeof entry === 'object' ? entry.messageId : entry;
+        if (storedId !== messageId) {
+            console.log(`[PartyManager] Note: Closing party ${messageId} while DB tracked ${storedId}. Clearing status.`);
+        }
+        delete data[userId];
+        writeData(data);
+        console.log(`[PartyManager] ✅ Database Updated: User ${userId} legacy status cleared.`);
+        return true;
+    }
+
+    // Array handling
+    const initialLength = entry.length;
+    data[userId] = entry.filter(p => p.messageId !== messageId);
+
+    if (data[userId].length === 0) {
+        delete data[userId];
+    }
+
+    writeData(data);
+    console.log(`[PartyManager] ✅ Database Updated: User ${userId} party ${messageId} removed.`);
+    return true;
 }
 
 module.exports = {
     hasActiveParty,
-    getActiveParty,
+    getActivePartyCount,
+    getActiveParties,
     setActiveParty,
     removeActiveParty
 };

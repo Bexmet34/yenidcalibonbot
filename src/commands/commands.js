@@ -60,7 +60,23 @@ const commands = [
         .addStringOption(option =>
             option.setName('isim')
                 .setDescription('İstatistikleri görülecek oyuncunun adı')
-                .setRequired(false))
+                .setRequired(false)),
+    new SlashCommandBuilder()
+        .setName('wladd')
+        .setDescription('Kullanıcıyı beyaz listeye ekler (Maks 3 parti kurabilir).')
+        .addUserOption(option =>
+            option.setName('kullanici')
+                .setDescription('Beyaz listeye eklenecek kullanıcı')
+                .setRequired(true))
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+    new SlashCommandBuilder()
+        .setName('wlremove')
+        .setDescription('Kullanıcıyı beyaz listeden çıkarır.')
+        .addUserOption(option =>
+            option.setName('kullanici')
+                .setDescription('Beyaz listeden çıkarılacak kullanıcı')
+                .setRequired(true))
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 ].map(command => command.toJSON());
 
 module.exports = commands;
