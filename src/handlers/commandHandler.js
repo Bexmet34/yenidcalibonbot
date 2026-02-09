@@ -2,7 +2,6 @@ const { MessageFlags, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle
 const { DEFAULT_CONTENT } = require('../constants/constants');
 const config = require('../config/config');
 const { createHelpEmbed } = require('../builders/embedBuilder');
-const { buildPvePayload } = require('../builders/payloadBuilder');
 const { safeReply } = require('../utils/interactionUtils');
 const { hasActiveParty, setActiveParty, getActiveParties, removeActiveParty, getActivePartyCount } = require('../services/partyManager');
 const { addToWhitelist, removeFromWhitelist, isWhitelisted } = require('../services/whitelistManager');
@@ -19,57 +18,6 @@ async function handleYardimCommand(interaction) {
     return await safeReply(interaction, { embeds: [helpEmbed], flags: [MessageFlags.Ephemeral] });
 }
 
-/**
- * Handles /pve command
- */
-async function handlePveCommand(interaction) {
-    const userId = interaction.user.id;
-    const whitelisted = isWhitelisted(userId);
-    const partyCount = getActivePartyCount(userId);
-    const limit = whitelisted ? 3 : 1;
-
-    if (partyCount >= limit) {
-        let errorMsg = whitelisted
-            ? `❌ **Limitinize ulaştınız!**\n\nWhite list üyesi olarak en fazla **3** aktif parti açabilirsiniz. Yeni bir parti açmadan önce mevcut partilerinizden birini kapatmalısınız.`
-            : `❌ **Zaten aktif bir partiniz var!**\n\nYeni bir parti açmadan önce mevcut partinizi kapatmalısınız. Kapatmak için:\n1️⃣ Mevcut partideki **"Partiyi Kapat"** butonuna basabilir,\n2️⃣ Veya \`/partikapat\` komutunu kullanabilirsiniz.`;
-
-        return await safeReply(interaction, {
-            content: errorMsg,
-            flags: [MessageFlags.Ephemeral]
-        });
-    }
-
-    const title = interaction.options.getString('başlık');
-    const details = interaction.options.getString('detaylar');
-    const content = interaction.options.getString('içerik') || DEFAULT_CONTENT;
-    const dpsCount = interaction.options.getInteger('dps_sayısı') || 4;
-
-    const payload = buildPvePayload(title, details, content, dpsCount, userId);
-
-    // Explicit return to msg
-    const msg = await safeReply(interaction, { content: '@everyone', ...payload });
-
-    // Ensure we have IDs before setting active party
-    const msgId = msg?.id;
-    const chanId = msg?.channelId || interaction.channelId;
-
-    if (msgId) {
-        setActiveParty(userId, msgId, chanId);
-
-        // SAVE TO DB
-        try {
-            await db.run(
-                'INSERT INTO parties (message_id, channel_id, owner_id, type, title) VALUES (?, ?, ?, ?, ?)',
-                [msgId, chanId, userId, 'pve', `💰 PVE: ${title}`]
-            );
-            console.log(`[CommandHandler] Registered PVE Log: User ${userId} -> Party ${msgId}`);
-        } catch (err) {
-            console.error('[CommandHandler] DB Error:', err.message);
-        }
-    } else {
-        console.log(`[CommandHandler] ⚠️ Failed to register party in DB because message ID was not captured.`);
-    }
-}
 
 /**
  * Handles /partikapat command
@@ -473,7 +421,6 @@ async function handlePrestijBilgiCommand(interaction) {
 
 module.exports = {
     handleYardimCommand,
-    handlePveCommand,
     handlePartikapatCommand,
     handleUyelerCommand,
     handleMeCommand,

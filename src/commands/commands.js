@@ -2,25 +2,6 @@ const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 
 const commands = [
     new SlashCommandBuilder()
-        .setName('pve')
-        .setDescription('Albion Online için yeni bir PVE content başvurusu oluşturur.')
-        .addStringOption(option =>
-            option.setName('başlık')
-                .setDescription('İçerik başlığı (örn: 💰 PVE SİL SÜPERME)')
-                .setRequired(true))
-        .addStringOption(option =>
-            option.setName('detaylar')
-                .setDescription('Loot, Fame ve diğer detaylar')
-                .setRequired(true))
-        .addStringOption(option =>
-            option.setName('içerik')
-                .setDescription('STATİK RAT, KRİSTAL vb. (Boş bırakılırsa varsayılan Albion içerikleri kullanılır)')
-                .setRequired(false))
-        .addIntegerOption(option =>
-            option.setName('dps_sayısı')
-                .setDescription('Kaç adet DPS slotu olsun? (Varsayılan: 4)')
-                .setRequired(false)),
-    new SlashCommandBuilder()
         .setName('partikur')
         .setDescription('Özel bir parti başvurusu oluşturur.')
         .addStringOption(option =>

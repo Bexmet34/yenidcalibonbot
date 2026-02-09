@@ -6,7 +6,7 @@ const config = require('./config/config');
 const fs = require('fs');
 const path = require('path');
 const { registerCommands } = require('./services/commandRegistration');
-const { handleYardimCommand, handlePveCommand, handlePartikapatCommand, handleUyelerCommand, handleMeCommand, handleWladdCommand, handleWlremoveCommand, handlePrestijCommand, handlePrestijListeCommand, handlePrestijBilgiCommand } = require('./handlers/commandHandler');
+const { handleYardimCommand, handlePartikapatCommand, handleUyelerCommand, handleMeCommand, handleWladdCommand, handleWlremoveCommand, handlePrestijCommand, handlePrestijListeCommand, handlePrestijBilgiCommand } = require('./handlers/commandHandler');
 const { handlePrestijEkleCommand, handlePrestijSilCommand, handlePrestijSifirlaCommand } = require('./handlers/adminHandler');
 const { handlePartikurCommand } = require('./handlers/partikurHandler');
 const { handlePartyButtons } = require('./handlers/buttonHandler');
@@ -115,8 +115,6 @@ client.on('interactionCreate', async interaction => {
         if (interaction.isChatInputCommand()) {
             if (interaction.commandName === 'yardim') {
                 await handleYardimCommand(interaction);
-            } else if (interaction.commandName === 'pve') {
-                await handlePveCommand(interaction);
             } else if (interaction.commandName === 'partikur') {
                 await handlePartikurCommand(interaction);
             } else if (interaction.commandName === 'partikapat') {

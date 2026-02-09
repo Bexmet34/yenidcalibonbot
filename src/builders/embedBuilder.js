@@ -92,7 +92,6 @@ function createHelpEmbed() {
         .setColor('#F1C40F')
         .setDescription('Discord sunucunuz için gelişmiş parti kurma ve yönetim botu.')
         .addFields(
-            { name: '🚀 /pve', value: 'Hızlıca standart bir PVE (Static, Tracking vb.) başvurusu oluşturur.', inline: false },
             { name: '🏗️ /partikur', value: 'Özel roller belirleyebileceğiniz (PVE/PVP) parti formu açar.', inline: false },
             { name: '⭐ /prestij', value: 'Kendi prestij seviyenizi ve katılım oranınızı görürsünüz.', inline: false },
             { name: '🏆 /prestij-liste', value: 'Sunucudaki en aktif ilk 10 oyuncuyu listeler.', inline: false },

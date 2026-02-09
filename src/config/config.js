@@ -9,7 +9,7 @@ module.exports = {
     MAX_ACTIVE_PARTIES: 3,
 
     // Activity
-    ACTIVITY_TEXT: '/pve & /partikur',
+    ACTIVITY_TEXT: '/partikur',
 
     // Security
     WHITELIST_USERS: ['407234961582587916'], // Kendi ID'nizi buraya ekleyin
