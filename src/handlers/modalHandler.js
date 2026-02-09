@@ -4,12 +4,14 @@ const { MessageFlags } = require('discord.js');
 const { getActivePartyCount, setActiveParty } = require('../services/partyManager');
 const { isWhitelisted } = require('../services/whitelistManager');
 const { getEuropeGuildMembers } = require('../services/albionApiService');
+const db = require('../services/db');
 
 /**
  * Handles modal submission for custom party creation
  */
 async function handlePartiModal(interaction) {
-    if (interaction.customId === 'parti_modal') {
+    if (interaction.customId.startsWith('parti_modal')) {
+        const type = interaction.customId.split(':')[1] || 'pve';
         const userId = interaction.user.id;
         const whitelisted = isWhitelisted(userId);
         const partyCount = getActivePartyCount(userId);
@@ -33,20 +35,39 @@ async function handlePartiModal(interaction) {
         const rolesList = rolesRaw.split('\n').map(r => r.trim()).filter(r => r.length > 0);
 
         // Send and capture message
-        const msg = await safeReply(interaction, { content: '@everyone', ...buildPartikurPayload(header, rolesList, userId, description, content) });
+        const payload = buildPartikurPayload(header, rolesList, userId, description, content, type);
+        const msg = await safeReply(interaction, { content: '@everyone', ...payload });
 
         const msgId = msg?.id;
         const chanId = msg?.channelId || interaction.channelId;
 
         if (msgId) {
             setActiveParty(userId, msgId, chanId);
-            console.log(`[ModalHandler] Registered: User ${userId} -> Party ${msgId}`);
+
+            // SAVE TO DB
+            try {
+                const result = await db.run(
+                    'INSERT INTO parties (message_id, channel_id, owner_id, type, title) VALUES (?, ?, ?, ?, ?)',
+                    [msgId, chanId, userId, type, header]
+                );
+                const partyDbId = result.lastID;
+
+                // SAVE INITIAL EMPTY MEMBERS (optional but good for tracking roles)
+                for (const role of rolesList) {
+                    await db.run(
+                        'INSERT INTO party_members (party_id, user_id, role, status) VALUES (?, ?, ?, ?)',
+                        [partyDbId, null, role, 'joined']
+                    );
+                }
+
+                console.log(`[ModalHandler] Registered Log: User ${userId} -> Party ${msgId} (Type: ${type})`);
+            } catch (err) {
+                console.error('[ModalHandler] DB Error:', err.message);
+            }
         } else {
             console.log(`[ModalHandler] ⚠️ Failed to register party in DB (No ID captured).`);
         }
     }
-
-
 }
 
 module.exports = {

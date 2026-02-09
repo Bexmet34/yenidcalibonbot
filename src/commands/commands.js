@@ -22,7 +22,15 @@ const commands = [
                 .setRequired(false)),
     new SlashCommandBuilder()
         .setName('partikur')
-        .setDescription('Özel bir parti başvurusu oluşturur.'),
+        .setDescription('Özel bir parti başvurusu oluşturur.')
+        .addStringOption(option =>
+            option.setName('tür')
+                .setDescription('Parti türünü seçiniz')
+                .setRequired(true)
+                .addChoices(
+                    { name: '⚔️ PVP', value: 'pvp' },
+                    { name: '💰 PVE', value: 'pve' }
+                )),
     new SlashCommandBuilder()
         .setName('yardim')
         .setDescription('Bot komutları ve geliştirici hakkında bilgi verir.'),
@@ -32,6 +40,49 @@ const commands = [
     new SlashCommandBuilder()
         .setName('uyeler')
         .setDescription('Avrupa sunucusu lonca üyelerini listeler.'),
+
+    new SlashCommandBuilder()
+        .setName('prestij')
+        .setDescription('Kendi prestij seviyenizi ve istatistiklerinizi görüntüler.'),
+    new SlashCommandBuilder()
+        .setName('prestij-bak')
+        .setDescription('Başka bir kullanıcının prestij seviyesine bakar.')
+        .addUserOption(option =>
+            option.setName('kullanici')
+                .setDescription('Prestijine bakılacak kullanıcı')
+                .setRequired(true)),
+
+    new SlashCommandBuilder()
+        .setName('prestij-liste')
+        .setDescription('Sunucudaki en yüksek prestijli 10 oyuncuyu listeler.'),
+    new SlashCommandBuilder()
+        .setName('prestij-bilgi')
+        .setDescription('Prestij sistemi rütbe ve seviye açıklamalarını gösterir.'),
+
+    new SlashCommandBuilder()
+        .setName('prestij-ekle')
+        .setDescription('[ADMIN] Kullanıcıya prestij ekler.')
+        .addUserOption(option => option.setName('kullanici').setDescription('Prestij eklenecek kullanıcı').setRequired(true))
+        .addIntegerOption(option => option.setName('miktar').setDescription('Eklenecek miktar').setRequired(true))
+        .addStringOption(option => option.setName('tur').setDescription('İçerik türü').addChoices(
+            { name: 'PVE', value: 'pve' },
+            { name: 'PVP', value: 'pvp' }
+        ).setRequired(false)),
+
+    new SlashCommandBuilder()
+        .setName('prestij-sil')
+        .setDescription('[ADMIN] Kullanıcıdan prestij siler.')
+        .addUserOption(option => option.setName('kullanici').setDescription('Prestij silinecek kullanıcı').setRequired(true))
+        .addIntegerOption(option => option.setName('miktar').setDescription('Silinecek miktar').setRequired(true))
+        .addStringOption(option => option.setName('tur').setDescription('İçerik türü').addChoices(
+            { name: 'PVE', value: 'pve' },
+            { name: 'PVP', value: 'pvp' }
+        ).setRequired(false)),
+
+    new SlashCommandBuilder()
+        .setName('prestij-sifirla')
+        .setDescription('[ADMIN] Kullanıcının tüm prestij verilerini sıfırlar.')
+        .addUserOption(option => option.setName('kullanici').setDescription('Prestij sıfırlanacak kullanıcı').setRequired(true)),
 
     new SlashCommandBuilder()
         .setName('cekilis')

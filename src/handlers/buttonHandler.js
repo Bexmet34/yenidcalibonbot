@@ -5,6 +5,7 @@ const { removeActiveParty } = require('../services/partyManager');
 const { getEuropeGuildMembers } = require('../services/albionApiService');
 const { createMemberPageEmbed } = require('./commandHandler');
 const { createProgressBar } = require('../builders/embedBuilder');
+const db = require('../services/db');
 
 /**
  * Handles join and leave button interactions
@@ -100,6 +101,9 @@ async function handlePartyButtons(interaction) {
             }
             return f;
         });
+
+        // DB SYNC: Remove user from all roles in this party
+        db.run('UPDATE party_members SET user_id = NULL WHERE party_id = (SELECT id FROM parties WHERE message_id = ?) AND user_id = ?', [message.id, userId]).catch(e => console.error(e));
     } else if (customId.startsWith('join_')) {
         // If user is already in a slot, leave it first
         if (isUserInAnySlot) {
@@ -150,6 +154,10 @@ async function handlePartyButtons(interaction) {
             if (isEmptySlot(fields[targetIndex].value)) {
                 fields[targetIndex].value = `<@${userId}>`;
                 fields[targetIndex].name = fields[targetIndex].name.replace('🟡', '🔴');
+
+                // DB SYNC: Update user in DB
+                const roleName = fields[targetIndex].name.split('. ')[1]?.replace(':', '') || 'Unknown';
+                db.run('INSERT INTO party_members (party_id, user_id, role, status) SELECT id, ?, ?, "joined" FROM parties WHERE message_id = ?', [userId, roleName, message.id]).catch(e => console.error(e));
             } else {
                 return interaction.reply({ content: '❌ Bu slot dolu!', flags: [MessageFlags.Ephemeral] });
             }
@@ -176,6 +184,79 @@ async function handlePartyButtons(interaction) {
     await interaction.update({ embeds: [newEmbed], components: newComponents });
 }
 
+/**
+ * Handles prestige leaderboard pagination buttons
+ */
+async function handlePrestigeButtons(interaction) {
+    const customId = interaction.customId;
+
+    if (customId === 'prestige_top10') {
+        const { createPrestigePageEmbed } = require('./commandHandler');
+        const result = await createPrestigePageEmbed(0, true);
+
+        const row = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+                .setCustomId('prestige_all')
+                .setLabel('📋 Tüm Liste')
+                .setStyle(ButtonStyle.Primary)
+        );
+
+        return await interaction.update({ embeds: [result.embed], components: [row] });
+    }
+    else if (customId === 'prestige_all') {
+        const { createPrestigePageEmbed } = require('./commandHandler');
+        const result = await createPrestigePageEmbed(0, false);
+
+        const row = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+                .setCustomId('prestige_top10')
+                .setLabel('🏆 İlk 10')
+                .setStyle(ButtonStyle.Primary),
+            new ButtonBuilder()
+                .setCustomId('prestige_prev_0')
+                .setLabel('⬅️ Önceki')
+                .setStyle(ButtonStyle.Secondary)
+                .setDisabled(true),
+            new ButtonBuilder()
+                .setCustomId('prestige_next_0')
+                .setLabel('Sonraki ➡️')
+                .setStyle(ButtonStyle.Secondary)
+                .setDisabled(result.totalPages <= 1)
+        );
+
+        return await interaction.update({ embeds: [result.embed], components: [row] });
+    }
+    else if (customId.startsWith('prestige_next_') || customId.startsWith('prestige_prev_')) {
+        const parts = customId.split('_');
+        const direction = parts[1];
+        const currentPage = parseInt(parts[2]);
+        const newPage = direction === 'next' ? currentPage + 1 : currentPage - 1;
+
+        const { createPrestigePageEmbed } = require('./commandHandler');
+        const result = await createPrestigePageEmbed(newPage, false);
+
+        const row = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+                .setCustomId('prestige_top10')
+                .setLabel('🏆 İlk 10')
+                .setStyle(ButtonStyle.Primary),
+            new ButtonBuilder()
+                .setCustomId(`prestige_prev_${newPage}`)
+                .setLabel('⬅️ Önceki')
+                .setStyle(ButtonStyle.Secondary)
+                .setDisabled(newPage === 0),
+            new ButtonBuilder()
+                .setCustomId(`prestige_next_${newPage}`)
+                .setLabel('Sonraki ➡️')
+                .setStyle(ButtonStyle.Secondary)
+                .setDisabled(newPage >= result.totalPages - 1)
+        );
+
+        return await interaction.update({ embeds: [result.embed], components: [row] });
+    }
+}
+
 module.exports = {
-    handlePartyButtons
+    handlePartyButtons,
+    handlePrestigeButtons
 };

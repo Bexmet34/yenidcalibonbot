@@ -6,11 +6,13 @@ const config = require('./config/config');
 const fs = require('fs');
 const path = require('path');
 const { registerCommands } = require('./services/commandRegistration');
-const { handleYardimCommand, handlePveCommand, handlePartikapatCommand, handleUyelerCommand, handleMeCommand, handleWladdCommand, handleWlremoveCommand } = require('./handlers/commandHandler');
+const { handleYardimCommand, handlePveCommand, handlePartikapatCommand, handleUyelerCommand, handleMeCommand, handleWladdCommand, handleWlremoveCommand, handlePrestijCommand, handlePrestijListeCommand, handlePrestijBilgiCommand } = require('./handlers/commandHandler');
+const { handlePrestijEkleCommand, handlePrestijSilCommand, handlePrestijSifirlaCommand } = require('./handlers/adminHandler');
 const { handlePartikurCommand } = require('./handlers/partikurHandler');
 const { handlePartyButtons } = require('./handlers/buttonHandler');
 const { handlePartiModal } = require('./handlers/modalHandler');
 const { handleInteractionError } = require('./utils/interactionUtils');
+const { initDb } = require('./services/db');
 
 const { handleCreateGiveaway, handleJoinGiveaway, checkGiveaways, handleEndCommand, handleRerollCommand, handleListParticipants, handleGiveawayModalSubmit } = require('./handlers/giveawayHandler');
 
@@ -20,6 +22,9 @@ const client = new Client({
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.GuildVoiceStates
+        // MessageContent intent requires enabling in Discord Developer Portal
+        // Go to: https://discord.com/developers/applications
+        // Select your bot -> Bot -> Privileged Gateway Intents -> Enable "Message Content Intent"
     ]
 });
 
@@ -49,6 +54,8 @@ process.on('uncaughtException', error => {
 // Bot startup function
 async function startBot() {
     try {
+        await initDb();
+        console.log('[Sistem] Veritabanı hazır.');
         await client.login(config.DISCORD_TOKEN);
         console.log('[Sistem] Discord bağlantısı kuruldu, hazır olması bekleniyor...');
     } catch (error) {
@@ -129,14 +136,41 @@ client.on('interactionCreate', async interaction => {
                 await handleWladdCommand(interaction);
             } else if (interaction.commandName === 'wlremove') {
                 await handleWlremoveCommand(interaction);
+            } else if (interaction.commandName === 'prestij' || interaction.commandName === 'prestij-bak') {
+                await handlePrestijCommand(interaction);
+            } else if (interaction.commandName === 'prestij-liste') {
+                await handlePrestijListeCommand(interaction);
+            } else if (interaction.commandName === 'prestij-bilgi') {
+                await handlePrestijBilgiCommand(interaction);
+            } else if (interaction.commandName === 'prestij-ekle') {
+                await handlePrestijEkleCommand(interaction);
+            } else if (interaction.commandName === 'prestij-sil') {
+                await handlePrestijSilCommand(interaction);
+            } else if (interaction.commandName === 'prestij-sifirla') {
+                await handlePrestijSifirlaCommand(interaction);
             }
         }
         // Handle button interactions
         else if (interaction.isButton()) {
             if (interaction.customId === 'giveaway_join') {
                 await handleJoinGiveaway(interaction);
+            } else if (interaction.customId.startsWith('verify_')) {
+                const { handleVerificationInteraction } = require('./handlers/attendanceHandler');
+                await handleVerificationInteraction(interaction);
+            } else if (interaction.customId.startsWith('prestige_') || interaction.customId === 'prestige_all') {
+                const { handlePrestigeButtons } = require('./handlers/buttonHandler');
+                await handlePrestigeButtons(interaction);
+            } else if (interaction.customId.startsWith('members_')) {
+                await handlePartyButtons(interaction);
             } else {
                 await handlePartyButtons(interaction);
+            }
+        }
+        // Handle select menu interactions
+        else if (interaction.isStringSelectMenu()) {
+            if (interaction.customId.startsWith('verify_')) {
+                const { handleVerificationInteraction } = require('./handlers/attendanceHandler');
+                await handleVerificationInteraction(interaction);
             }
         }
         // Handle modal submissions

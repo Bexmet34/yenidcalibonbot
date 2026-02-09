@@ -22,9 +22,11 @@ async function handlePartikurCommand(interaction) {
         });
     }
 
+    const tür = interaction.options.getString('tür') || 'pve';
+
     const modal = new ModalBuilder()
-        .setCustomId('parti_modal')
-        .setTitle('Parti Oluştur');
+        .setCustomId(`parti_modal:${tür}`)
+        .setTitle(`Parti Oluştur (${tür.toUpperCase()})`);
 
     const headerInput = new TextInputBuilder()
         .setCustomId('party_header')
