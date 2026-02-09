@@ -41,6 +41,12 @@ function initDb() {
                 FOREIGN KEY(party_id) REFERENCES parties(id) ON DELETE CASCADE
             )`);
 
+            // System settings for persistent configs (like leaderboard message ID)
+            db.run(`CREATE TABLE IF NOT EXISTS system_settings (
+                key TEXT PRIMARY KEY,
+                value TEXT
+            )`);
+
             // User stats for prestige
             db.run(`CREATE TABLE IF NOT EXISTS user_stats (
                 user_id TEXT PRIMARY KEY,
@@ -57,6 +63,8 @@ function initDb() {
                     db.serialize(() => {
                         db.run("ALTER TABLE user_stats ADD COLUMN pve_confirmed INTEGER DEFAULT 0", () => { });
                         db.run("ALTER TABLE user_stats ADD COLUMN pvp_confirmed INTEGER DEFAULT 0", () => { });
+                        // Ensure system_settings exists for existing DBs
+                        db.run(`CREATE TABLE IF NOT EXISTS system_settings (key TEXT PRIMARY KEY, value TEXT)`, () => { });
                         resolve();
                     });
                 }

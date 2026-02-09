@@ -6,7 +6,7 @@ const config = require('./config/config');
 const fs = require('fs');
 const path = require('path');
 const { registerCommands } = require('./services/commandRegistration');
-const { handleYardimCommand, handlePartikapatCommand, handleUyelerCommand, handleMeCommand, handleWladdCommand, handleWlremoveCommand, handlePrestijCommand, handlePrestijListeCommand, handlePrestijBilgiCommand } = require('./handlers/commandHandler');
+const { handleYardimCommand, handlePartikapatCommand, handleUyelerCommand, handleMeCommand, handleWladdCommand, handleWlremoveCommand, handlePrestijCommand, handlePrestijListeCommand, handlePrestijBilgiCommand, handlePrestijTablosuKurCommand } = require('./handlers/commandHandler');
 const { handlePrestijEkleCommand, handlePrestijSilCommand, handlePrestijSifirlaCommand } = require('./handlers/adminHandler');
 const { handlePartikurCommand } = require('./handlers/partikurHandler');
 const { handlePartyButtons } = require('./handlers/buttonHandler');
@@ -146,6 +146,8 @@ client.on('interactionCreate', async interaction => {
                 await handlePrestijSilCommand(interaction);
             } else if (interaction.commandName === 'prestij-sifirla') {
                 await handlePrestijSifirlaCommand(interaction);
+            } else if (interaction.commandName === 'prestij-tablosu-kur') {
+                await handlePrestijTablosuKurCommand(interaction);
             }
         }
         // Handle button interactions
@@ -155,7 +157,7 @@ client.on('interactionCreate', async interaction => {
             } else if (interaction.customId.startsWith('verify_')) {
                 const { handleVerificationInteraction } = require('./handlers/attendanceHandler');
                 await handleVerificationInteraction(interaction);
-            } else if (interaction.customId.startsWith('prestige_') || interaction.customId === 'prestige_all') {
+            } else if (interaction.customId.startsWith('prestige_') || interaction.customId === 'prestige_all' || interaction.customId === 'lb_refresh') {
                 const { handlePrestigeButtons } = require('./handlers/buttonHandler');
                 await handlePrestigeButtons(interaction);
             } else if (interaction.customId.startsWith('members_')) {

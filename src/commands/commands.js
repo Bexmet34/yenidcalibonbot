@@ -66,6 +66,12 @@ const commands = [
         .addUserOption(option => option.setName('kullanici').setDescription('Prestij sıfırlanacak kullanıcı').setRequired(true)),
 
     new SlashCommandBuilder()
+        .setName('prestij-tablosu-kur')
+        .setDescription('[ADMIN] Otomatik güncellenen prestij tablosunu kurar.')
+        .addChannelOption(option => option.setName('kanal').setDescription('Tablonun kurulacağı kanal').setRequired(true))
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
+    new SlashCommandBuilder()
         .setName('cekilis')
         .setDescription('Çekiliş işlemlerini yönetir. ')
         .addSubcommand(subcommand =>

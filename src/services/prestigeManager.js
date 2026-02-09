@@ -92,6 +92,10 @@ async function updateUserStats(userId, isConfirmed, type = 'pve', guild = null) 
     if (guild) {
         const { updateUserNickname } = require('./nicknameManager');
         await updateUserNickname(guild, userId);
+
+        // Update Live Leaderboard
+        const { updateLeaderboard } = require('./leaderboardService');
+        updateLeaderboard(guild.client);
     }
 }
 

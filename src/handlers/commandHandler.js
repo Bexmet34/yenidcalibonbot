@@ -419,6 +419,35 @@ async function handlePrestijBilgiCommand(interaction) {
     return await safeReply(interaction, { embeds: [embed], flags: [MessageFlags.Ephemeral] });
 }
 
+/**
+ * Handles /prestij-tablosu-kur command
+ */
+async function handlePrestijTablosuKurCommand(interaction) {
+    if (!interaction.member.permissions.has('Administrator')) {
+        return await safeReply(interaction, { content: '❌ Bu komutu sadece yöneticiler kullanabilir.', flags: [MessageFlags.Ephemeral] });
+    }
+
+    const channel = interaction.options.getChannel('kanal');
+    const db = require('../services/db');
+    const { updateLeaderboard } = require('../services/leaderboardService');
+
+    try {
+        await db.run('INSERT OR REPLACE INTO system_settings (key, value) VALUES (?, ?)', ['leaderboard_channel_id', channel.id]);
+
+        // Reset message ID so a new one is created in the new channel
+        await db.run('DELETE FROM system_settings WHERE key = "leaderboard_message_id"');
+
+        await safeReply(interaction, { content: `✅ Prestij tablosu <#${channel.id}> kanalına başarıyla kuruldu!`, flags: [MessageFlags.Ephemeral] });
+
+        // Trigger initial update
+        await updateLeaderboard(interaction.client);
+
+    } catch (error) {
+        console.error('[PrestijTabloKur] Hata:', error);
+        await safeReply(interaction, { content: '❌ Tablo kurulurken bir hata oluştu.', flags: [MessageFlags.Ephemeral] });
+    }
+}
+
 module.exports = {
     handleYardimCommand,
     handlePartikapatCommand,
@@ -429,6 +458,7 @@ module.exports = {
     handlePrestijCommand,
     handlePrestijListeCommand,
     handlePrestijBilgiCommand,
+    handlePrestijTablosuKurCommand,
     createMemberPageEmbed,
     createPrestigePageEmbed
 };

@@ -198,6 +198,13 @@ async function handlePartyButtons(interaction) {
 async function handlePrestigeButtons(interaction) {
     const customId = interaction.customId;
 
+    if (customId === 'lb_refresh') {
+        const { updateLeaderboard } = require('../services/leaderboardService');
+        await interaction.deferUpdate();
+        await updateLeaderboard(interaction.client);
+        return;
+    }
+
     if (customId === 'prestige_top10') {
         const { createPrestigePageEmbed } = require('./commandHandler');
         const result = await createPrestigePageEmbed(0, true);
