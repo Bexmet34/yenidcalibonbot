@@ -13,24 +13,20 @@ async function startAttendanceVerification(interaction, messageId) {
         const party = await db.get('SELECT * FROM parties WHERE message_id = ?', [messageId]);
         if (!party) return;
 
-        const channel = await interaction.client.channels.fetch(party.channel_id);
-        const message = await channel.messages.fetch(messageId);
-        if (!message || !message.embeds[0]) return;
+        // Database Source of Truth: Get participants from DB
+        const dbParticipants = await db.all('SELECT DISTINCT user_id, role FROM party_members WHERE party_id = ? AND user_id IS NOT NULL', [party.id]);
 
-        const participants = [];
-        message.embeds[0].fields.forEach(field => {
-            const match = field.value.match(/<@!?(\d+)>/);
-            if (match) {
-                participants.push({ id: match[1], role: field.name.replace(/[🔴🟡]/g, '').trim() });
-            }
-        });
-
-        if (participants.length === 0) {
+        if (dbParticipants.length === 0) {
             return await interaction.followUp({
                 content: `ℹ️ **${party.title}** partisinde kimse kayıtlı olmadığı için doğrulama atlandı.`,
                 flags: [MessageFlags.Ephemeral]
             });
         }
+
+        const participants = dbParticipants.map(p => ({
+            id: p.user_id,
+            role: p.role || 'Üye'
+        }));
 
         const verificationEmbed = new EmbedBuilder()
             .setTitle('🎯 Katılım Doğrulama')
@@ -47,11 +43,15 @@ async function startAttendanceVerification(interaction, messageId) {
             .setPlaceholder('Gelmedi olarak işaretle (Seçim zorunlu değil)')
             .setMinValues(0)
             .setMaxValues(uniqueParticipants.length)
-            .addOptions(uniqueParticipants.map(p => ({
-                label: `Üye: ${p.id.substring(0, 8)}...`,
-                value: p.id,
-                description: `Rol: ${p.role}`
-            })));
+            .addOptions(uniqueParticipants.map(p => {
+                const member = interaction.guild.members.cache.get(p.id);
+                const displayName = member ? (member.nickname || member.user.globalName || member.user.username) : `ID: ${p.id.substring(0, 8)}`;
+                return {
+                    label: `${displayName}`,
+                    value: p.id,
+                    description: `Rol: ${p.role}`
+                };
+            }));
 
         const row1 = new ActionRowBuilder().addComponents(selectMenu);
         const row2 = new ActionRowBuilder().addComponents(
@@ -96,28 +96,45 @@ async function handleVerificationInteraction(interaction) {
 
         try {
             const party = await db.get('SELECT * FROM parties WHERE message_id = ?', [messageId]);
-            const channel = await interaction.client.channels.fetch(party.channel_id);
-            const message = await channel.messages.fetch(messageId);
 
-            const participants = [];
-            message.embeds[0].fields.forEach(field => {
-                const match = field.value.match(/<@!?(\d+)>/);
-                if (match) participants.push(match[1]);
-            });
+            // Database Source of Truth: Get participants from DB
+            const dbParticipants = await db.all('SELECT DISTINCT user_id FROM party_members WHERE party_id = ? AND user_id IS NOT NULL', [party.id]);
+            const participants = dbParticipants.map(p => p.user_id);
+
+            if (participants.length === 0) {
+                await interaction.editReply({
+                    content: `⚠️ **Uyarı:** Veritabanında kayıtlı katılımcı bulunamadı.`,
+                    embeds: [],
+                    components: []
+                });
+                return;
+            }
 
             // Update DB and Stats
+            let confirmedCount = 0;
+            let noShowCount = 0;
+
             for (const userId of participants) {
                 const isConfirmed = !noshows.includes(userId);
-                await db.run('INSERT INTO party_members (party_id, user_id, status) VALUES (?, ?, ?)',
-                    [party.id, userId, isConfirmed ? 'confirmed' : 'no_show']);
+                if (isConfirmed) confirmedCount++;
+                else noShowCount++;
+
+                // Update status in party_members (don't insert duplicates)
+                await db.run('UPDATE party_members SET status = ? WHERE party_id = ? AND user_id = ?',
+                    [isConfirmed ? 'confirmed' : 'no_show', party.id, userId]);
+
+                // Update User Global Stats
                 await updateUserStats(userId, isConfirmed, party.type, interaction.guild);
             }
+
+            // Verification Complete Log
+            console.log(`[Attendance] Party ${party.id} verified. Confirmed: ${confirmedCount}, NoShow: ${noShowCount}`);
 
             await db.run('UPDATE parties SET status = "verified" WHERE id = ?', [party.id]);
             noShowSelections.delete(selectionKey);
 
             await interaction.editReply({
-                content: `✅ **Doğrulama Tamamlandı!**\nToplam **${participants.length}** katılımcı işlendi. Gelmeyen: **${noshows.length}**`,
+                content: `✅ **Doğrulama Tamamlandı!**\nToplam **${participants.length}** katılımcı işlendi.\n✅ Gelen: **${confirmedCount}**\n❌ Gelmeyen: **${noShowCount}**`,
                 embeds: [],
                 components: []
             });

@@ -41,7 +41,15 @@ async function handlePartyButtons(interaction) {
         removeActiveParty(ownerId, message.id);
 
         console.log(`[ButtonHandler] ✅ Party ${message.id} closed by owner.`);
-        return await interaction.update({ embeds: [closedEmbed], components: [closedRow] });
+
+        const response = await interaction.update({ embeds: [closedEmbed], components: [closedRow] });
+
+        // TRIGGER ATTENDANCE VERIFICATION
+        // Must be called AFTER interaction.update because startAttendanceVerification uses interaction.followUp
+        const { startAttendanceVerification } = require('./attendanceHandler');
+        await startAttendanceVerification(interaction, message.id);
+
+        return response;
     }
 
 
