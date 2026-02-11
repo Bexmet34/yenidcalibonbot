@@ -32,10 +32,10 @@ dcalbionbot/
 │   ├── 📂 builders/                 # Mesaj oluşturucular
 │   │   ├── embedBuilder.js          # Embed mesaj oluşturucular
 │   │   ├── componentBuilder.js      # Buton ve component oluşturucular
-│   │   └── payloadBuilder.js        # Tam mesaj payload'ları
 │   │
 │   └── 📂 utils/                    # Yardımcı fonksiyonlar
-│       └── interactionUtils.js      # Güvenli etkileşim ve hata yönetimi
+│       ├── interactionUtils.js      # Güvenli etkileşim ve hata yönetimi
+│       └── generalUtils.js          # Genel yardımcı fonksiyonlar (örn: progress bar)
 │
 ├── 📂 node_modules/                 # NPM bağımlılıkları (Git'e eklenmez)
 │
@@ -114,17 +114,6 @@ dcalbionbot/
 
 ### 🔧 Services (Servisler)
 
-#### `src/services/queueService.js`
-- Aktif parti yönetimi
-- Kuyruk sistemi
-- Maksimum parti kontrolü
-- Kuyruk işleme
-
-#### `src/services/autoCloseService.js`
-- Otomatik parti kapanma
-- Zamanlayıcı yönetimi
-- Kapalı parti embed'i oluşturma
-
 #### `src/services/commandRegistration.js`
 - Discord API'ye komut kaydı
 - SSL hata yönetimi
@@ -144,11 +133,6 @@ dcalbionbot/
 - Özel parti butonları
 - Buton durumu güncelleme
 
-#### `src/builders/payloadBuilder.js`
-- Tam PVE payload'ı
-- Tam Partikur payload'ı
-- Embed + Component birleştirme
-
 ### 🛠️ Utils (Yardımcılar)
 
 #### `src/utils/interactionUtils.js`
@@ -161,12 +145,12 @@ dcalbionbot/
 
 ### PVE Komutu Akışı:
 ```
-1. User: /pve komutu
-2. commandHandler.js: Komutu işle
-3. queueService.js: Kuyruk kontrolü
-4. payloadBuilder.js: Mesaj oluştur
-5. interactionUtils.js: Güvenli gönder
-6. autoCloseService.js: Zamanlayıcı başlat
+1. User: /partikur komutu
+2. commandHandler.js (handlePartikurCommand): Komutu işle
+3. modalHandler.js: Form verilerini al
+4. embedBuilder.js: Embed oluştur
+5. componentBuilder.js: Butonları oluştur
+6. partyManager.js: Partiyi veritabanına kaydet
 ```
 
 ### Buton Etkileşimi Akışı:

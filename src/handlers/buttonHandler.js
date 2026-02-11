@@ -4,7 +4,7 @@ const { updateButtonStates, createClosedButton } = require('../builders/componen
 const { removeActiveParty } = require('../services/partyManager');
 const { getEuropeGuildMembers } = require('../services/albionApiService');
 const { createMemberPageEmbed } = require('./commandHandler');
-const { createProgressBar } = require('../builders/embedBuilder');
+const { createProgressBar } = require('../utils/generalUtils');
 const db = require('../services/db');
 
 /**
@@ -206,69 +206,53 @@ async function handlePrestigeButtons(interaction) {
     }
 
     if (customId === 'prestige_top10') {
-        const { createPrestigePageEmbed } = require('./commandHandler');
-        const result = await createPrestigePageEmbed(0, true);
+        await handlePrestigeNavigation(interaction, 0, true);
+    } else if (customId === 'prestige_all') {
+        await handlePrestigeNavigation(interaction, 0, false);
+    } else if (customId.startsWith('prestige_next_') || customId.startsWith('prestige_prev_')) {
+        const parts = customId.split('_');
+        const direction = parts[1];
+        const currentPage = parseInt(parts[2]);
+        const newPage = direction === 'next' ? currentPage + 1 : currentPage - 1;
+        await handlePrestigeNavigation(interaction, newPage, false);
+    }
+}
 
-        const row = new ActionRowBuilder().addComponents(
+async function handlePrestigeNavigation(interaction, page, topOnly) {
+    const { createPrestigePageEmbed } = require('./commandHandler');
+    const result = await createPrestigePageEmbed(page, topOnly);
+
+    if (!result) return; // Should not happen if buttons are active
+
+    const row = new ActionRowBuilder();
+
+    if (topOnly) {
+        row.addComponents(
             new ButtonBuilder()
                 .setCustomId('prestige_all')
                 .setLabel('📋 Tüm Liste')
                 .setStyle(ButtonStyle.Primary)
         );
-
-        return await interaction.update({ embeds: [result.embed], components: [row] });
-    }
-    else if (customId === 'prestige_all') {
-        const { createPrestigePageEmbed } = require('./commandHandler');
-        const result = await createPrestigePageEmbed(0, false);
-
-        const row = new ActionRowBuilder().addComponents(
+    } else {
+        row.addComponents(
             new ButtonBuilder()
                 .setCustomId('prestige_top10')
                 .setLabel('🏆 İlk 10')
                 .setStyle(ButtonStyle.Primary),
             new ButtonBuilder()
-                .setCustomId('prestige_prev_0')
+                .setCustomId(`prestige_prev_${page}`)
                 .setLabel('⬅️ Önceki')
                 .setStyle(ButtonStyle.Secondary)
-                .setDisabled(true),
+                .setDisabled(page === 0),
             new ButtonBuilder()
-                .setCustomId('prestige_next_0')
+                .setCustomId(`prestige_next_${page}`)
                 .setLabel('Sonraki ➡️')
                 .setStyle(ButtonStyle.Secondary)
-                .setDisabled(result.totalPages <= 1)
+                .setDisabled(page >= result.totalPages - 1)
         );
-
-        return await interaction.update({ embeds: [result.embed], components: [row] });
     }
-    else if (customId.startsWith('prestige_next_') || customId.startsWith('prestige_prev_')) {
-        const parts = customId.split('_');
-        const direction = parts[1];
-        const currentPage = parseInt(parts[2]);
-        const newPage = direction === 'next' ? currentPage + 1 : currentPage - 1;
 
-        const { createPrestigePageEmbed } = require('./commandHandler');
-        const result = await createPrestigePageEmbed(newPage, false);
-
-        const row = new ActionRowBuilder().addComponents(
-            new ButtonBuilder()
-                .setCustomId('prestige_top10')
-                .setLabel('🏆 İlk 10')
-                .setStyle(ButtonStyle.Primary),
-            new ButtonBuilder()
-                .setCustomId(`prestige_prev_${newPage}`)
-                .setLabel('⬅️ Önceki')
-                .setStyle(ButtonStyle.Secondary)
-                .setDisabled(newPage === 0),
-            new ButtonBuilder()
-                .setCustomId(`prestige_next_${newPage}`)
-                .setLabel('Sonraki ➡️')
-                .setStyle(ButtonStyle.Secondary)
-                .setDisabled(newPage >= result.totalPages - 1)
-        );
-
-        return await interaction.update({ embeds: [result.embed], components: [row] });
-    }
+    return await interaction.update({ embeds: [result.embed], components: [row] });
 }
 
 module.exports = {

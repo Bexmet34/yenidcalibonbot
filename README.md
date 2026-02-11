@@ -90,8 +90,7 @@ npm start
 
 ## 🎯 Özellikler
 
-- `/pve` - PVE content başvurusu oluştur
-- `/partikur` - Özel parti başvurusu oluştur
+- `/partikur` - Özel parti başvurusu oluştur (PVE/PVP)
 - `/yardim` - Yardım menüsü
 
 ## 📝 Notlar

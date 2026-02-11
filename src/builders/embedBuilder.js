@@ -47,20 +47,7 @@ function createEmbed(title, details, content, roles, isClosed = false) {
     return embed;
 }
 
-/**
- * Creates a progress bar for the footer
- */
-function createProgressBar(current, total) {
-    const size = 15;
-    const progress = Math.round((size * current) / total);
-    const emptyProgress = size - progress;
-
-    const progressText = '█'.repeat(progress);
-    const emptyProgressText = '░'.repeat(emptyProgress);
-    const percentage = Math.round((current / total) * 100);
-
-    return `[${progressText}${emptyProgressText}] ${current}/${total} (%${percentage})`;
-}
+const { createProgressBar } = require('../utils/generalUtils');
 
 /**
  * Creates a custom party embed

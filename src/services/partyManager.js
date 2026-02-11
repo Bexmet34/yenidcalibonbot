@@ -44,8 +44,7 @@ function hasActiveParty(userId) {
     const data = readData();
     const entry = data[userId];
     if (!entry) return false;
-    if (Array.isArray(entry)) return entry.length > 0;
-    return true; // legacy object
+    return entry.length > 0;
 }
 
 /**
@@ -55,8 +54,7 @@ function getActivePartyCount(userId) {
     const data = readData();
     const entry = data[userId];
     if (!entry) return 0;
-    if (Array.isArray(entry)) return entry.length;
-    return 1; // legacy object
+    return entry.length;
 }
 
 /**
@@ -66,8 +64,7 @@ function getActiveParties(userId) {
     const data = readData();
     const entry = data[userId];
     if (!entry) return [];
-    if (Array.isArray(entry)) return entry;
-    return [entry]; // legacy object to array
+    return entry;
 }
 
 /**
@@ -79,11 +76,8 @@ function setActiveParty(userId, messageId, channelId) {
 
     if (!data[userId]) {
         data[userId] = [newParty];
-    } else if (Array.isArray(data[userId])) {
-        data[userId].push(newParty);
     } else {
-        // Migration from legacy single object to array
-        data[userId] = [data[userId], newParty];
+        data[userId].push(newParty);
     }
 
     writeData(data);
