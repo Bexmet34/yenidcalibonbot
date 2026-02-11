@@ -342,14 +342,27 @@ async function createPrestigePageEmbed(page = 0, topOnly = false) {
         .setTimestamp();
 
     let listText = '';
+
+    // Header for readability
+    // listText += '`#   Oyuncu             Katılım   Oran `\n';
+
     for (let i = 0; i < currentPageUsers.length; i++) {
         const user = currentPageUsers[i];
         const stats = await getUserPrestige(user.user_id);
         const rank = topOnly ? i + 1 : offset + i + 1;
-        listText += `**${rank}.** ${stats.icon} <@${user.user_id}> - \`${user.confirmed_count}\` Katılım (%${stats.rate})\n`;
+
+        // Emotes: 🛡️ PVE, ⚔️ PVP, ❌ NoShow
+        // Format: #1 @User • ⭐50 (%98)
+        //         └ 🛡️30 | ⚔️20 | ❌1
+
+        listText += `**${rank}.** ${stats.icon} <@${user.user_id}> • **${stats.confirmed}** Puan (\`%${stats.rate}\`)\n`;
+        listText += `╰ 🛡️ \`${stats.pveConfirmed}\` | ⚔️ \`${stats.pvpConfirmed}\` | 💀 \`${stats.noShow}\`\n`;
     }
 
-    embed.addFields({ name: 'Sıralama', value: listText });
+    if (listText.length === 0) listText = 'Veri bulunamadı.';
+
+    embed.addFields({ name: 'Sıralama Listesi', value: listText });
+    embed.setFooter({ text: '🛡️ PVE | ⚔️ PVP | 💀 Gelmedi' });
 
     return { embed, totalPages, currentPage: page, totalUsers: allUsers.length };
 }
