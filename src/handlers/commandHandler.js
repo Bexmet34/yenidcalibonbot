@@ -7,7 +7,6 @@ const { hasActiveParty, setActiveParty, getActiveParties, removeActiveParty, get
 const { addToWhitelist, removeFromWhitelist, isWhitelisted } = require('../services/whitelistManager');
 const { createClosedButton } = require('../builders/componentBuilder');
 const { getEuropeGuildMembers, searchPlayer, getPlayerStats } = require('../services/albionApiService');
-const { getEuropeGuildMembers, searchPlayer, getPlayerStats } = require('../services/albionApiService');
 const db = require('../services/db');
 
 /**
