@@ -7,7 +7,7 @@ const { hasActiveParty, setActiveParty, getActiveParties, removeActiveParty, get
 const { addToWhitelist, removeFromWhitelist, isWhitelisted } = require('../services/whitelistManager');
 const { createClosedButton } = require('../builders/componentBuilder');
 const { getEuropeGuildMembers, searchPlayer, getPlayerStats } = require('../services/albionApiService');
-const { getUserPrestige, updateUserStats } = require('../services/prestigeManager');
+const { getEuropeGuildMembers, searchPlayer, getPlayerStats } = require('../services/albionApiService');
 const db = require('../services/db');
 
 /**
@@ -76,13 +76,6 @@ async function handlePartikapatCommand(interaction) {
 
         await interaction.editReply({ content: responseContent }).catch(() => { });
 
-        // TRIGGER ATTENDANCE VERIFICATION
-        if (totalClosed > 0) {
-            const { startAttendanceVerification } = require('./attendanceHandler');
-            for (const partyInfo of parties) {
-                await startAttendanceVerification(interaction, partyInfo.messageId);
-            }
-        }
 
     } catch (error) {
         console.error('[CommandHandler] Critical Error:', error);
@@ -264,203 +257,6 @@ async function handleMeCommand(interaction) {
     }
 }
 
-/**
- * Handles /prestij and /prestij-bak commands
- */
-async function handlePrestijCommand(interaction) {
-    const targetUser = interaction.options.getUser('kullanici') || interaction.user;
-    await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
-
-    try {
-        const prestige = await getUserPrestige(targetUser.id);
-
-        const embed = new EmbedBuilder()
-            .setTitle(`${prestige.icon} Prestij Seviyesi: ${prestige.name}`)
-            .setColor(prestige.minRate > 0 ? '#F1C40F' : '#3498DB')
-            .setThumbnail(targetUser.displayAvatarURL())
-            .addFields(
-                { name: '👤 Kullanıcı', value: `<@${targetUser.id}>`, inline: true },
-                { name: '⭐ Toplam Onaylı', value: `\`${prestige.confirmed}\``, inline: true },
-                { name: '📊 Genel Oran', value: `\`%${prestige.rate}\``, inline: true },
-                { name: '\u200b', value: '⚔️ **İÇERİK DETAYLARI**', inline: false },
-                { name: '💰 PVE Katılım', value: `\`${prestige.pveConfirmed}\``, inline: true },
-                { name: '⚔️ PVP Katılım', value: `\`${prestige.pvpConfirmed}\``, inline: true },
-                { name: '❌ Gelmedi', value: `\`${prestige.noShow}\``, inline: true },
-                { name: '\u200b', value: '📈 **İLERLEME VE HEDEF**', inline: false },
-                { name: 'Hedef Seviye', value: getNextRankInfo(prestige), inline: false }
-            )
-            .setFooter({ text: 'PVE/PVP katılım oranları toplam onaylı içindeki dağılımı gösterir.' })
-            .setTimestamp();
-
-        return await interaction.editReply({ embeds: [embed] });
-    } catch (error) {
-        console.error('[Prestij] Hata:', error);
-        return await interaction.editReply({ content: '❌ Prestij bilgileri alınırken bir hata oluştu.' });
-    }
-}
-
-function getNextRankInfo(current) {
-    const { RANKS } = require('../services/prestigeManager');
-    const nextRank = RANKS.find(r => r.minCount > current.confirmed);
-
-    if (!nextRank) return '🏆 **En yüksek seviyeye ulaştınız!**';
-
-    let info = `Sonraki Seviye: **${nextRank.icon} ${nextRank.name}**\n`;
-    info += `Gerekli Katılım: \`${current.confirmed}/${nextRank.minCount}\``;
-    if (nextRank.minRate > 0) info += `\nGerekli Oran: \`%${nextRank.minRate}\``;
-
-    return info;
-}
-
-/**
- * Creates prestige leaderboard page embed
- */
-async function createPrestigePageEmbed(page = 0, topOnly = false) {
-    const pageSize = 10;
-    const offset = page * pageSize;
-
-    let allUsers;
-    if (topOnly) {
-        allUsers = await db.all('SELECT * FROM user_stats ORDER BY confirmed_count DESC LIMIT 10');
-    } else {
-        allUsers = await db.all('SELECT * FROM user_stats ORDER BY confirmed_count DESC');
-    }
-
-    if (allUsers.length === 0) {
-        return null;
-    }
-
-    const currentPageUsers = topOnly ? allUsers : allUsers.slice(offset, offset + pageSize);
-    const totalPages = topOnly ? 1 : Math.ceil(allUsers.length / pageSize);
-
-    const embed = new EmbedBuilder()
-        .setTitle('🏆 Prestij Liderlik Tablosu')
-        .setColor('#F1C40F')
-        .setDescription(topOnly
-            ? 'Sunucudaki en aktif ve güvenilir ilk 10 oyuncu:'
-            : `Sunucudaki tüm oyuncular (Sayfa ${page + 1}/${totalPages}):`)
-        .setTimestamp();
-
-    let listText = '';
-
-    // Header for readability
-    // listText += '`#   Oyuncu             Katılım   Oran `\n';
-
-    for (let i = 0; i < currentPageUsers.length; i++) {
-        const user = currentPageUsers[i];
-        const stats = await getUserPrestige(user.user_id);
-        const rank = topOnly ? i + 1 : offset + i + 1;
-
-        // Emotes: 🛡️ PVE, ⚔️ PVP, ❌ NoShow
-        // Format: #1 @User • ⭐50 (%98)
-        //         └ 🛡️30 | ⚔️20 | ❌1
-
-        listText += `**${rank}.** ${stats.icon} <@${user.user_id}> • **${stats.confirmed}** Puan (\`%${stats.rate}\`)\n`;
-        listText += `╰ 🛡️ \`${stats.pveConfirmed}\` | ⚔️ \`${stats.pvpConfirmed}\` | 💀 \`${stats.noShow}\`\n`;
-    }
-
-    if (listText.length === 0) listText = 'Veri bulunamadı.';
-
-    embed.addFields({ name: 'Sıralama Listesi', value: listText });
-    embed.setFooter({ text: '🛡️ PVE | ⚔️ PVP | 💀 Gelmedi' });
-
-    return { embed, totalPages, currentPage: page, totalUsers: allUsers.length };
-}
-
-/**
- * Handles /prestij-liste command
- */
-async function handlePrestijListeCommand(interaction) {
-    await interaction.deferReply();
-
-    try {
-        const result = await createPrestigePageEmbed(0, false);
-
-        if (!result) {
-            return await interaction.editReply({ content: 'ℹ️ Henüz prestij verisi bulunmuyor.' });
-        }
-
-        const row = new ActionRowBuilder().addComponents(
-            new ButtonBuilder()
-                .setCustomId('prestige_top10')
-                .setLabel('🏆 İlk 10')
-                .setStyle(ButtonStyle.Primary),
-            new ButtonBuilder()
-                .setCustomId('prestige_prev_0')
-                .setLabel('⬅️ Önceki')
-                .setStyle(ButtonStyle.Secondary)
-                .setDisabled(true),
-            new ButtonBuilder()
-                .setCustomId('prestige_next_0')
-                .setLabel('Sonraki ➡️')
-                .setStyle(ButtonStyle.Secondary)
-                .setDisabled(result.totalPages <= 1)
-        );
-
-        return await interaction.editReply({ embeds: [result.embed], components: [row] });
-    } catch (error) {
-        console.error('[PrestijListe] Hata:', error);
-        return await interaction.editReply({ content: '❌ Liste alınırken bir hata oluştu.' });
-    }
-}
-
-/**
- * Handles /prestij-bilgi command
- */
-async function handlePrestijBilgiCommand(interaction) {
-    const { RANKS } = require('../services/prestigeManager');
-
-    const embed = new EmbedBuilder()
-        .setTitle('⭐ Prestij Sistemi ve Rütbeler')
-        .setColor('#F1C40F')
-        .setDescription('Sunucumuzda katılım sağladığınız her parti için prestij kazanırsınız. İşte rütbe detayları:')
-        .setThumbnail('https://render.albiononline.com/v1/spell/PLAYER_PORTRAIT_FARMER.png');
-
-    let rankInfo = '';
-    RANKS.forEach(rank => {
-        rankInfo += `**${rank.icon} ${rank.name}**\n`;
-        rankInfo += `└ Şart: \`${rank.minCount}\` Katılım`;
-        if (rank.minRate > 0) rankInfo += ` + \`%${rank.minRate}\` Oran`;
-        rankInfo += '\n\n';
-    });
-
-    embed.addFields(
-        { name: '📊 Rütbe Listesi', value: rankInfo },
-        { name: '⚠️ Bilgilendirme', value: '• **Normal** ile **Enchant III** arası rütbelerden geri düşüş yoktur.\n• **Exceptional** ve üzeri rütbeler için katılım oranınızı yüksek tutmalısınız.\n• Oranınız düşerse rütbeniz de düşer.' }
-    );
-
-    return await safeReply(interaction, { embeds: [embed], flags: [MessageFlags.Ephemeral] });
-}
-
-/**
- * Handles /prestij-tablosu-kur command
- */
-async function handlePrestijTablosuKurCommand(interaction) {
-    if (!interaction.member.permissions.has('Administrator')) {
-        return await safeReply(interaction, { content: '❌ Bu komutu sadece yöneticiler kullanabilir.', flags: [MessageFlags.Ephemeral] });
-    }
-
-    const channel = interaction.options.getChannel('kanal');
-    const db = require('../services/db');
-    const { updateLeaderboard } = require('../services/leaderboardService');
-
-    try {
-        await db.run('INSERT OR REPLACE INTO system_settings (key, value) VALUES (?, ?)', ['leaderboard_channel_id', channel.id]);
-
-        // Reset message ID so a new one is created in the new channel
-        await db.run('DELETE FROM system_settings WHERE key = "leaderboard_message_id"');
-
-        await safeReply(interaction, { content: `✅ Prestij tablosu <#${channel.id}> kanalına başarıyla kuruldu!`, flags: [MessageFlags.Ephemeral] });
-
-        // Trigger initial update
-        await updateLeaderboard(interaction.client);
-
-    } catch (error) {
-        console.error('[PrestijTabloKur] Hata:', error);
-        await safeReply(interaction, { content: '❌ Tablo kurulurken bir hata oluştu.', flags: [MessageFlags.Ephemeral] });
-    }
-}
-
 module.exports = {
     handleYardimCommand,
     handlePartikapatCommand,
@@ -468,10 +264,5 @@ module.exports = {
     handleMeCommand,
     handleWladdCommand,
     handleWlremoveCommand,
-    handlePrestijCommand,
-    handlePrestijListeCommand,
-    handlePrestijBilgiCommand,
-    handlePrestijTablosuKurCommand,
-    createMemberPageEmbed,
-    createPrestigePageEmbed
+    createMemberPageEmbed
 };

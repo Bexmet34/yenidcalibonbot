@@ -10,7 +10,7 @@ const db = require('../services/db');
 
 async function handlePartiModal(interaction) {
     if (interaction.customId.startsWith('parti_modal:')) {
-        const type = interaction.customId.split(':')[1] || 'pve';
+        const type = interaction.customId.split(':')[1] || 'genel';
 
         const userId = interaction.user.id;
         const whitelisted = isWhitelisted(userId);

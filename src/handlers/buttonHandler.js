@@ -44,11 +44,6 @@ async function handlePartyButtons(interaction) {
 
         const response = await interaction.update({ embeds: [closedEmbed], components: [closedRow] });
 
-        // TRIGGER ATTENDANCE VERIFICATION
-        // Must be called AFTER interaction.update because startAttendanceVerification uses interaction.followUp
-        const { startAttendanceVerification } = require('./attendanceHandler');
-        await startAttendanceVerification(interaction, message.id);
-
         return response;
     }
 
@@ -192,70 +187,6 @@ async function handlePartyButtons(interaction) {
     await interaction.update({ embeds: [newEmbed], components: newComponents });
 }
 
-/**
- * Handles prestige leaderboard pagination buttons
- */
-async function handlePrestigeButtons(interaction) {
-    const customId = interaction.customId;
-
-    if (customId === 'lb_refresh') {
-        const { updateLeaderboard } = require('../services/leaderboardService');
-        await interaction.deferUpdate();
-        await updateLeaderboard(interaction.client);
-        return;
-    }
-
-    if (customId === 'prestige_top10') {
-        await handlePrestigeNavigation(interaction, 0, true);
-    } else if (customId === 'prestige_all') {
-        await handlePrestigeNavigation(interaction, 0, false);
-    } else if (customId.startsWith('prestige_next_') || customId.startsWith('prestige_prev_')) {
-        const parts = customId.split('_');
-        const direction = parts[1];
-        const currentPage = parseInt(parts[2]);
-        const newPage = direction === 'next' ? currentPage + 1 : currentPage - 1;
-        await handlePrestigeNavigation(interaction, newPage, false);
-    }
-}
-
-async function handlePrestigeNavigation(interaction, page, topOnly) {
-    const { createPrestigePageEmbed } = require('./commandHandler');
-    const result = await createPrestigePageEmbed(page, topOnly);
-
-    if (!result) return; // Should not happen if buttons are active
-
-    const row = new ActionRowBuilder();
-
-    if (topOnly) {
-        row.addComponents(
-            new ButtonBuilder()
-                .setCustomId('prestige_all')
-                .setLabel('📋 Tüm Liste')
-                .setStyle(ButtonStyle.Primary)
-        );
-    } else {
-        row.addComponents(
-            new ButtonBuilder()
-                .setCustomId('prestige_top10')
-                .setLabel('🏆 İlk 10')
-                .setStyle(ButtonStyle.Primary),
-            new ButtonBuilder()
-                .setCustomId(`prestige_prev_${page}`)
-                .setLabel('⬅️ Önceki')
-                .setStyle(ButtonStyle.Secondary)
-                .setDisabled(page === 0),
-            new ButtonBuilder()
-                .setCustomId(`prestige_next_${page}`)
-                .setLabel('Sonraki ➡️')
-                .setStyle(ButtonStyle.Secondary)
-                .setDisabled(page >= result.totalPages - 1)
-        );
-    }
-
-    return await interaction.update({ embeds: [result.embed], components: [row] });
-}
-
 module.exports = {
-    handlePartyButtons,
-    handlePrestigeButtons
+    handlePartyButtons
 };

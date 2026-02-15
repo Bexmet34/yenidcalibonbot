@@ -52,19 +52,16 @@ const { createProgressBar } = require('../utils/generalUtils');
 /**
  * Creates a custom party embed
  */
-function createPartikurEmbed(header, rolesList, description = '', content = '', currentCount = 0, type = 'pve') {
+function createPartikurEmbed(header, rolesList, description = '', content = '', currentCount = 0) {
     let desc = `📍 **Çıkış Yeri:** ${content}`;
     if (description) {
         desc += `\n\n📝 **Parti Notları:**\n${description}`;
     }
 
-    const typeLabel = type === 'pvp' ? '⚔️ PVP' : '💰 PVE';
-    const typeColor = type === 'pvp' ? '#E74C3C' : '#2ECC71';
-
     const embed = new EmbedBuilder()
-        .setTitle(`🛡️ Turquoise | ${header} [${typeLabel}]`)
+        .setTitle(`🛡️ Turquoise | ${header}`)
         .setDescription(desc)
-        .setColor(typeColor)
+        .setColor('#F1C40F')
         .setFooter({ text: `Doluluk: ${createProgressBar(currentCount, rolesList.length)}` });
 
     return embed;
@@ -79,10 +76,7 @@ function createHelpEmbed() {
         .setColor('#F1C40F')
         .setDescription('Discord sunucunuz için gelişmiş parti kurma ve yönetim botu.')
         .addFields(
-            { name: '🏗️ /partikur', value: 'Özel roller belirleyebileceğiniz (PVE/PVP) parti formu açar.', inline: false },
-            { name: '⭐ /prestij', value: 'Kendi prestij seviyenizi ve katılım oranınızı görürsünüz.', inline: false },
-            { name: '🏆 /prestij-liste', value: 'Sunucudaki en aktif ilk 10 oyuncuyu listeler.', inline: false },
-            { name: '📖 /prestij-bilgi', value: 'Prestij rütbeleri ve çalışma sistemi hakkında bilgi verir.', inline: false },
+            { name: '🏗️ /partikur', value: 'Özel roller belirleyebileceğiniz parti formu açar.', inline: false },
             { name: 'ℹ️ /yardim', value: 'Bu menüyü görüntüler.', inline: false },
             { name: '💎 Geliştirici', value: '```ansi\n\u001b[31mHakkı\u001b[0m\n```', inline: false }
         );

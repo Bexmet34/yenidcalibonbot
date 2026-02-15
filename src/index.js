@@ -6,8 +6,7 @@ const config = require('./config/config');
 const fs = require('fs');
 const path = require('path');
 const { registerCommands } = require('./services/commandRegistration');
-const { handleYardimCommand, handlePartikapatCommand, handleUyelerCommand, handleMeCommand, handleWladdCommand, handleWlremoveCommand, handlePrestijCommand, handlePrestijListeCommand, handlePrestijBilgiCommand, handlePrestijTablosuKurCommand } = require('./handlers/commandHandler');
-const { handlePrestijEkleCommand, handlePrestijSilCommand, handlePrestijSifirlaCommand } = require('./handlers/adminHandler');
+const { handleYardimCommand, handlePartikapatCommand, handleUyelerCommand, handleMeCommand, handleWladdCommand, handleWlremoveCommand } = require('./handlers/commandHandler');
 const { handlePartikurCommand } = require('./handlers/partikurHandler');
 const { handlePartyButtons } = require('./handlers/buttonHandler');
 const { handlePartiModal } = require('./handlers/modalHandler');
@@ -134,32 +133,12 @@ client.on('interactionCreate', async interaction => {
                 await handleWladdCommand(interaction);
             } else if (interaction.commandName === 'wlremove') {
                 await handleWlremoveCommand(interaction);
-            } else if (interaction.commandName === 'prestij' || interaction.commandName === 'prestij-bak') {
-                await handlePrestijCommand(interaction);
-            } else if (interaction.commandName === 'prestij-liste') {
-                await handlePrestijListeCommand(interaction);
-            } else if (interaction.commandName === 'prestij-bilgi') {
-                await handlePrestijBilgiCommand(interaction);
-            } else if (interaction.commandName === 'prestij-ekle') {
-                await handlePrestijEkleCommand(interaction);
-            } else if (interaction.commandName === 'prestij-sil') {
-                await handlePrestijSilCommand(interaction);
-            } else if (interaction.commandName === 'prestij-sifirla') {
-                await handlePrestijSifirlaCommand(interaction);
-            } else if (interaction.commandName === 'prestij-tablosu-kur') {
-                await handlePrestijTablosuKurCommand(interaction);
             }
         }
         // Handle button interactions
         else if (interaction.isButton()) {
             if (interaction.customId === 'giveaway_join') {
                 await handleJoinGiveaway(interaction);
-            } else if (interaction.customId.startsWith('verify_')) {
-                const { handleVerificationInteraction } = require('./handlers/attendanceHandler');
-                await handleVerificationInteraction(interaction);
-            } else if (interaction.customId.startsWith('prestige_') || interaction.customId === 'prestige_all' || interaction.customId === 'lb_refresh') {
-                const { handlePrestigeButtons } = require('./handlers/buttonHandler');
-                await handlePrestigeButtons(interaction);
             } else if (interaction.customId.startsWith('members_')) {
                 await handlePartyButtons(interaction);
             } else {
@@ -168,10 +147,6 @@ client.on('interactionCreate', async interaction => {
         }
         // Handle select menu interactions
         else if (interaction.isStringSelectMenu()) {
-            if (interaction.customId.startsWith('verify_')) {
-                const { handleVerificationInteraction } = require('./handlers/attendanceHandler');
-                await handleVerificationInteraction(interaction);
-            }
         }
         // Handle modal submissions
         else if (interaction.isModalSubmit()) {
