@@ -45,7 +45,7 @@ async function handlePartiModal(interaction) {
         rolesList.forEach((role, index) => {
             fields.push({
                 name: `🟡 ${index + 1}. ${role}:`,
-                value: '`Boş Slot`', // Or use constant for empty slot
+                value: '-', // Or use constant for empty slot
                 inline: false
             });
         });

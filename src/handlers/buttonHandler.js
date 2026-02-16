@@ -91,7 +91,7 @@ async function handlePartyButtons(interaction) {
     const isUserInAnySlot = fields.some(f => f.value.includes(userId));
 
     // Helper function to check if a slot is empty
-    const isEmptySlot = (value) => value === '-' || value === '`Boş Slot`' || value.includes(EMPTY_SLOT);
+    const isEmptySlot = (value) => value === '-' || value.includes(EMPTY_SLOT);
 
     if (customId === 'leave') {
         fields = fields.map(f => {
